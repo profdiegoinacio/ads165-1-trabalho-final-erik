@@ -11,8 +11,10 @@ import org.springframework.security.crypto.password.PasswordEncoder; // <-- DESC
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // <-- USE O IMPORT DO SPRING
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UsuarioService{ // REMOVIDO UserDetailsService daqui, ficará no AutenticacaoService
@@ -36,9 +38,8 @@ public class UsuarioService{ // REMOVIDO UserDetailsService daqui, ficará no Au
     }
     // ---------------------------------------------------------
 
-    @Transactional // Import de org.springframework.transaction.annotation.Transactional
+    @Transactional
     public Usuario registrarNovoUsuario(UsuarioRegistroDTO dto) {
-        // 1. Validar se email ou nomeUsuario já existem
         if (usuarioRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Erro: Email já está em uso!");
         }
@@ -49,19 +50,30 @@ public class UsuarioService{ // REMOVIDO UserDetailsService daqui, ficará no Au
         log.info("Tentando registrar novo usuário: {}", dto.getNomeUsuario());
 
         Usuario novoUsuario = new Usuario();
-        // ID será gerado pelo banco
         novoUsuario.setNome(dto.getNome());
         novoUsuario.setEmail(dto.getEmail());
         novoUsuario.setNomeUsuario(dto.getNomeUsuario());
         novoUsuario.setTelefone(dto.getTelefone());
-
-        // 2. Criptografar a senha ANTES de salvar
         novoUsuario.setSenha(passwordEncoder.encode(dto.getSenha()));
+        novoUsuario.setEnabled(true); // Habilitado por padrão
 
-        // 3. Salvar no banco de dados usando o repositório REAL
+        // Atribuição de papéis
+        Set<String> rolesParaSalvar = new HashSet<>();
+        if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
+            // Adiciona os papéis fornecidos, garantindo o prefixo ROLE_ se necessário
+            // (A lógica do prefixo pode ser mais elaborada se os papéis vêm de um enum, etc.)
+            for (String role : dto.getRoles()) {
+                rolesParaSalvar.add(role.startsWith("ROLE_") ? role : "ROLE_" + role.toUpperCase());
+            }
+        } else {
+            rolesParaSalvar.add("ROLE_USER"); // Papel padrão se nenhum for fornecido
+        }
+        novoUsuario.setRoles(rolesParaSalvar);
+
         Usuario usuarioSalvo = usuarioRepository.save(novoUsuario);
-        log.info("Usuário {} registrado com ID {}", usuarioSalvo.getNomeUsuario(), usuarioSalvo.getId());
-        return usuarioSalvo; // Retorna o usuário salvo pelo repositório
+        log.info("Usuário {} registrado com papéis {} e ID {}",
+                usuarioSalvo.getNomeUsuario(), usuarioSalvo.getRoles(), usuarioSalvo.getId());
+        return usuarioSalvo;
     }
 
     @Transactional(readOnly = true) // Opcional: Marcar leituras como readOnly
@@ -76,7 +88,7 @@ public class UsuarioService{ // REMOVIDO UserDetailsService daqui, ficará no Au
         return usuario;
     }
 
-    @Transactional(readOnly = true) // Opcional: Marcar leituras como readOnly
+    @Transactional(readOnly = true)
     public List<Usuario> listarTodos() {
         log.info("Listando todos os usuários do banco de dados");
         List<Usuario> usuarios = usuarioRepository.findAll(); // Usa o método REAL do JpaRepository
@@ -84,7 +96,7 @@ public class UsuarioService{ // REMOVIDO UserDetailsService daqui, ficará no Au
         return usuarios;
     }
 
-    // Métodos auxiliares que usam o repositório real
+
     public boolean existsByEmail(String email) {
         return usuarioRepository.existsByEmail(email);
     }
@@ -93,5 +105,4 @@ public class UsuarioService{ // REMOVIDO UserDetailsService daqui, ficará no Au
         return usuarioRepository.existsByNomeUsuario(nomeUsuario);
     }
 
-    // Removi a implementação de UserDetailsService daqui para ficar no AutenticacaoService
 }

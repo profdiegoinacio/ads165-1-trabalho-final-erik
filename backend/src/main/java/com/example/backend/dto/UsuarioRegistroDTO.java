@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 public class UsuarioRegistroDTO {
@@ -27,4 +29,6 @@ public class UsuarioRegistroDTO {
     @NotBlank(message = "Senha não pode estar em branco")
     @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
     private String senha;
+
+    private Set<String> roles;
 }
