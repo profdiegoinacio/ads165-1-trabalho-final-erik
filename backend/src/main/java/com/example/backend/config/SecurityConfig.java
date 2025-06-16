@@ -10,6 +10,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,24 +37,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Integra a configuração CORS (definida em WebConfig ou outro bean) com Spring Security
                 .cors(Customizer.withDefaults())
-
-                // Desabilita CSRF (Cross-Site Request Forgery)
                 .csrf(csrf -> csrf.disable())
-
-                // Sessão STATELESS
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // Regras de Autorização
                 .authorizeHttpRequests(authorize -> authorize
+                        // --- ADICIONE ESTA NOVA REGRA AQUI ---
+                        .requestMatchers(HttpMethod.GET, "/api/v1/postagens/usuario/**").permitAll()
+                        // Usamos /** como coringa para permitir /usuario/user, /usuario/admin, etc.
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/usuarios/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/postagens").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/usuarios/registrar").permitAll()
                         .anyRequest().authenticated()
                 )
-                // Adiciona o filtro JWT
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
+
 }

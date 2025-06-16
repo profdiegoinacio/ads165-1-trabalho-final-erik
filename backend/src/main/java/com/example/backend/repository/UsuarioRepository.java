@@ -2,12 +2,13 @@ package com.example.backend.repository;
 
 import com.example.backend.domain.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 
 @Repository
-public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+public interface UsuarioRepository extends JpaRepository<Usuario, Long>, JpaSpecificationExecutor<Usuario> {
 
     //Busc usuario por nome
     Optional<Usuario> findByNomeUsuario(String nomeUsuario);

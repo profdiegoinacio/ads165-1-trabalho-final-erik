@@ -1,12 +1,13 @@
 package com.example.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Collection;
 import java.util.HashSet; // Import HashSet
@@ -57,6 +58,24 @@ public class Usuario implements UserDetails {
         this.enabled = true;
     }
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "usuarios_seguidores", // Nome da tabela de junção
+            joinColumns = @JoinColumn(name = "seguidor_id"), // Chave do usuário que segue
+            inverseJoinColumns = @JoinColumn(name = "seguido_id") // Chave do usuário que é seguido
+    )
+    @JsonIgnore // Evita que a lista de quem você segue seja serializada, quebrando o loop
+    private Set<Usuario> seguindo = new HashSet<>();
+
+    @ManyToMany(mappedBy = "seguindo", fetch = FetchType.LAZY)
+    @JsonIgnore // Evita que a lista de seguidores seja serializada
+    private Set<Usuario> seguidores = new HashSet<>();
+
+    @Setter
+    @Getter
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonManagedReference // Lado "principal" da relação, será serializado normalmente
+    private Perfil perfil;
 
     // --- Implementação dos métodos UserDetails ATUALIZADA ---
 
@@ -98,4 +117,5 @@ public class Usuario implements UserDetails {
     public boolean isEnabled() {
         return this.enabled;
     }
+
 }

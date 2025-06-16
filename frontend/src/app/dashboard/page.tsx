@@ -1,47 +1,108 @@
+// src/app/dashboard/page.tsx
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '@/services/axiosConfig';
+import { signOut, useSession } from 'next-auth/react';
+import FormularioCriarPostagem from '@/components/dashboard/FormularioCriarPostagem';
+import Postagem from '@/components/dashboard/Postagem';
+import api from '@/lib/api';
+import { Post } from '@/types/post';
+import DebugAuthStatus from '@/components/DebugAuthStatus';
+
+// Interface para a resposta paginada da nossa API
+interface PaginatedPosts {
+    content: Post[];
+}
 
 export default function PaginaDashboard() {
     const router = useRouter();
+    const { status } = useSession();
 
-    //logout
-    const handleLogout = () => {
-        localStorage.removeItem('authToken'); // Remove o token
+    const [postagens, setPostagens] = useState<Post[]>([]);
+    const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-        // Limpa o header de autorização padrão do axios (se configurado)
-        // Isso evita que requisições futuras tentem usar o token antigo
-        if (api.defaults.headers.common['Authorization']) {
-            delete api.defaults.headers.common['Authorization'];
+    // Criamos uma função para buscar os posts que pode ser reutilizada.
+    // Usamos useCallback para que a função não seja recriada em cada renderização,
+    // a menos que suas dependências mudem (neste caso, nenhuma).
+    const fetchPosts = useCallback(async () => {
+        console.log("Buscando postagens...");
+        setIsLoadingPosts(true);
+        setError(null);
+        try {
+            const response = await api.get<PaginatedPosts>('/postagens');
+            setPostagens(response.data.content);
+        } catch (err) {
+            console.error("Falha ao buscar postagens:", err);
+            setError("Não foi possível carregar o feed.");
+        } finally {
+            setIsLoadingPosts(false);
         }
+    }, []);
 
-        alert("Você foi desconectado."); // desabilitar quando a pagina estiver estruturada
+    // useEffect para proteger a rota e buscar os dados iniciais
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            router.replace('/login');
+        } else if (status === 'authenticated') {
+            fetchPosts();
+        }
+    }, [status, router, fetchPosts]);
 
-        // Redireciona para o login usando o router
-        router.push('/login');
+    const handleLogout = async () => {
+        await signOut({ redirect: true, callbackUrl: '/login' });
     };
 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-            <div className="text-center">
-                <h1 className="text-6xl mb-4">🚧</h1>
-                <h2 className="text-3xl font-bold mb-2">Página em Construção</h2>
-                <p className="text-xl text-gray-400 mb-8">(Work in Progress)</p>
-                <p className="text-gray-500 mb-4">
-                    Login realizado com sucesso! Esta será sua área principal.
-                </p>
-
-                {/* Botão de Logout */}
-                <button
-                    onClick={handleLogout}
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md transition duration-300 ease-in-out"
-                >
-                    Logout (Sair)
-                </button>
-
+    // Se a sessão está carregando, mostramos um loader.
+    if (status === 'loading') {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+                <p>Verificando sessão...</p>
             </div>
+        );
+    }
+
+    // Se o usuário está autenticado, mostramos o dashboard.
+    if (status === 'authenticated') {
+        return (
+            <div>
+                <div className="p-4 border-b border-gray-700 sticky top-0 bg-black/70 backdrop-blur-md flex justify-between items-center">
+                    <h1 className="text-xl font-bold text-white">Página Inicial</h1>
+                    <button
+                        onClick={handleLogout}
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-1 px-3 rounded-md transition duration-300"
+                    >
+                        Logout
+                    </button>
+                </div>
+
+                {/* Passamos a função fetchPosts para o formulário como prop 'onPostCreated' */}
+                <FormularioCriarPostagem onPostCreated={fetchPosts} />
+
+                <section>
+                    {error && <p className="text-center text-red-500 p-4">{error}</p>}
+                    {isLoadingPosts ? (
+                        <p className="text-center text-gray-500 p-8">Carregando postagens...</p>
+                    ) : postagens.length > 0 ? (
+                        postagens.map((post) => (
+                            <Postagem key={post.id} post={post} />
+                        ))
+                    ) : (
+                        <p className="text-center text-gray-500 p-8">Nenhuma postagem encontrada.</p>
+                    )}
+                </section>
+
+                {/* Mantenha o debug por enquanto para garantir que tudo está ok */}
+                <DebugAuthStatus />
+            </div>
+        );
+    }
+
+    // Fallback enquanto redireciona
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+            <p>Redirecionando...</p>
         </div>
     );
 }
