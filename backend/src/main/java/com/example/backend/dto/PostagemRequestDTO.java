@@ -4,9 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-/**
- * DTO para receber os dados de uma nova postagem vinda do frontend.
- */
 @Data
 public class PostagemRequestDTO {
 
@@ -14,5 +11,5 @@ public class PostagemRequestDTO {
     @Size(max = 2000, message = "O conteúdo pode ter no máximo 2000 caracteres.")
     private String conteudo;
 
-    private String urlMidia; // Opcional
+    private String urlMidia;
 }

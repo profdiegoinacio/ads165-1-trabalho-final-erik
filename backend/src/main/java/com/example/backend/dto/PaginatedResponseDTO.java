@@ -15,7 +15,6 @@ public class PaginatedResponseDTO<T> {
     private int totalPages;
     private boolean isLast;
 
-    // Construtor que converte um objeto Page do Spring para nosso DTO
     public PaginatedResponseDTO(Page<T> page) {
         this.content = page.getContent();
         this.pageNumber = page.getNumber();

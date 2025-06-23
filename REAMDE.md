@@ -1,198 +1,144 @@
-# Conecta Pro (ads165-1-trabalho-final-erik)
+# Conecta Pro
 
+Conecta Pro é uma plataforma digital no formato de rede social projetada para facilitar a conexão entre profissionais qualificados e clientes. O objetivo é criar um ecossistema robusto onde prestadores de serviço possam ser encontrados, avaliados e contratados, e onde clientes possam encontrar com segurança os talentos que precisam.
 
- Tecnologias Utilizadas
+## Funcionalidades Atuais
 
-* **Backend:**
-    * Java 21
-    * Spring Boot 3.x
-    * Spring Data JPA (Hibernate)
-    * Spring Security
-    * PostgreSQL (Banco de Dados)
-    * Gradle (Build Tool com Kotlin DSL)
-    * Lombok
-    * JWT (JSON Web Tokens) para autenticação (via biblioteca `java-jwt` Auth0)
-* **Frontend:**
-    * Node.js
-    * Next.js 14+ (App Router)
-    * React 18+
-    * TypeScript
-    * Tailwind CSS (Estilização)
-    * Axios (Cliente HTTP)
-    * ESLint (Linting)
-* **Ambiente:**
-    * IDE: IntelliJ IDEA (sugerido para backend), VS Code (sugerido para frontend)
-    * Banco de Dados: Instância PostgreSQL local ou Dockerizada.
-    * Gerenciador de Pacotes Frontend: npm ou yarn.
+A aplicação possui uma base sólida e funcional, implementando o ciclo completo de interação de uma rede social profissional:
 
-### Estrutura do Projeto
+* **Autenticação e Segurança:**
+    * Sistema completo de cadastro, login e gerenciamento de sessão com NextAuth.js.
+    * Backend protegido com Spring Security e autenticação baseada em tokens JWT (JSON Web Tokens).
 
-O repositório está organizado em duas pastas principais:
+* **Perfis de Usuário:**
+    * Criação e edição de perfis detalhados, incluindo nome, bio, formação e URLs para fotos de perfil e capa.
+    * Distinção visual e lógica entre usuários comuns e perfis profissionais.
 
-* `backend/`: Contém o código da API Spring Boot.
-* `frontend/`: Contém o código da aplicação Next.js.
+* **Interação Social:**
+    * Sistema de **Seguir / Deixar de Seguir** entre usuários.
+    * **Feed de Postagens:** Usuários podem criar postagens de texto. O feed principal exibe as postagens em ordem cronológica.
+    * **Sistema de Avaliações:** Usuários podem avaliar profissionais com uma nota (de 1 a 5 estrelas) e um comentário. A nota média é exibida dinamicamente no perfil.
 
- Configuração e Execução
+* **Busca e Descoberta:**
+    * **Busca Geral:** Campo de busca funcional que encontra usuários por nome ou nome de usuário.
+    * **Filtro por Categorias:** Uma página dedicada permite que os usuários cliquem em uma área de atuação (ex: "Desenvolvimento Web") e vejam uma lista de todos os profissionais pertencentes àquela categoria.
 
-Siga os passos abaixo para configurar e executar ambas as partes da aplicação localmente.
+## 🛠️ Tecnologias Utilizadas
 
-### Backend (Spring Boot)
+| Backend (API)                                | Frontend (Interface)                    |
+| -------------------------------------------- | --------------------------------------- |
+| Java 21 & Spring Boot 3.x                    | Next.js 15+ (App Router) & React        |
+| Spring Security (com JWT)                    | TypeScript                              |
+| Spring Data JPA (Hibernate)                  | NextAuth.js v5 (Autenticação)           |
+| PostgreSQL                                   | Tailwind CSS (Estilização)              |
+| Gradle                                       | Axios (Cliente HTTP)                    |
+| Lombok                                       | Lucide React (Ícones)                   |
 
-**Pré-requisitos:**
+## ⚙️ Como Executar o Projeto Localmente
 
-* JDK 21 (ou superior) instalado e configurado no `PATH`.
-* Gradle instalado (opcional, pois o projeto inclui o Gradle Wrapper - `gradlew`).
-* Uma instância do PostgreSQL rodando localmente ou acessível pela rede.
+Siga os passos abaixo para ter a aplicação completa rodando na sua máquina.
 
-**Passos:**
+### Pré-requisitos
 
-1.  **Configurar Banco de Dados PostgreSQL:**
-    * Certifique-se que o servidor PostgreSQL esteja rodando.
-    * Crie um banco de dados dedicado para a aplicação (ex: `conectapro_db`). Use um cliente como DBeaver, pgAdmin ou `psql`.
-        ```sql
-        -- Exemplo usando psql:
-        CREATE DATABASE conectapro_db;
-        -- Cria um banco de dados com o nome de conectapro_db
-        -- Crie um usuário ou use um existente (ex: postgres)
-        ```
-2.  **Configurar `application.properties`:**
-    * Navegue até `backend/src/main/resources/`.
-    * Abra o arquivo `application.properties`.
-    * Ajuste as seguintes propriedades com os dados da sua instância PostgreSQL:
-        ```properties
-        spring.datasource.url=jdbc:postgresql://localhost:5432/conectapro_db # Mude host, porta e nome do DB se necessário
-        spring.datasource.username=seu_usuario_do_postgres
-        spring.datasource.password=sua_senha_do_postgres
-        ```
-      
-        ```
-    * (Opcional) Ajuste `api.security.jwt.expiration-ms` se desejar um tempo de expiração diferente para o token (o padrão atual é 2 horas).
-    * (Opcional) Verifique `spring.jpa.hibernate.ddl-auto`. O valor `update` é conveniente para desenvolvimento inicial, mas `validate` ou `none` (com migrations via Flyway/Liquibase) é recomendado para produção ou desenvolvimento estável.
-3.  **Compilar o Projeto (Build):**
-    * Abra um terminal na pasta raiz `backend/`.
-    * Execute o comando do Gradle Wrapper:
-        * Windows: `gradlew.bat build`
-    * Isso baixará as dependências e compilará o código.
-4.  **Executar a Aplicação:**
-    * **Via Gradle Wrapper:**
-        * Windows: `gradlew.bat bootRun`
-    * **Via IDE:** Importe o projeto Gradle na sua IDE (IntelliJ) e execute a classe principal `BackendApplication.java`.
-    * **Via JAR (após o build):** `java -jar build/libs/backend-*.jar` (substitua `*` pelo nome do JAR gerado).
-    * O backend estará rodando, por padrão, em `http://localhost:8080`. Verifique os logs para confirmar a inicialização bem-sucedida e a conexão com o banco.
-
-### Frontend (Next.js)
-
-**Pré-requisitos:**
-
-* Node.js (versão LTS recomendada, ex: 18.x, 20.x) instalado.
-* npm ou yarn instalado (geralmente vem com o Node.js).
-
-**Passos:**
-
-1.  **Configurar Variável de Ambiente:**
-    * Navegue até a pasta raiz `frontend/`.
-    * Crie um arquivo chamado `.env.local` (se não existir).
-    * Adicione a seguinte linha, garantindo que a URL aponta para o seu backend rodando:
-        ```
-        NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
-        ```
-      *(Ajuste a porta ou URL se seu backend rodar em local diferente)*.
-2.  **Instalar Dependências:**
-    * Abra um terminal na pasta raiz `frontend/`.
-    * Execute o comando:
-        * Usando npm: `npm install`
-        * Usando yarn: `yarn install`
-3.  **Executar a Aplicação em Modo de Desenvolvimento:**
-    * No mesmo terminal (na pasta `frontend/`), execute:
-        * Usando npm: `npm run dev`
-        * Usando yarn: `yarn dev`
-    * O frontend estará acessível, por padrão, em `http://localhost:3000`.
-
-## 5. Decisões Arquiteturais
-
-* **Monorepo-like:** O código do backend e frontend residem no mesmo repositório para facilitar o gerenciamento, mas são aplicações independentes.
-* **Backend (Spring Boot):**
-    * Arquitetura em Camadas (Controller, Service, Repository, Domain, DTO) para separação de responsabilidades.
-    * Spring Data JPA para abstração da persistência de dados.
-    * Spring Security para gerenciamento de segurança, com autenticação baseada em JWT.
-    * Injeção de Dependência via construtor (preferencialmente).
-* **Frontend (Next.js):**
-    * App Router para estrutura moderna de roteamento e renderização.
-    * TypeScript para tipagem estática e robustez.
-    * Tailwind CSS para estilização utilitária rápida.
-    * Axios para chamadas à API backend, com instância configurada.
-    * Componentes de Cliente (`"use client";`) para páginas interativas (formulários, etc.).
-    * Componentes reutilizáveis (`Input`, `Button`) para consistência da UI.
-    * Armazenamento de token JWT no `localStorage` (simples para começar, considerar alternativas mais seguras como cookies HttpOnly se necessário).
-
-## 6. Endpoints da API Implementados
-
-A URL base da API é: `http://localhost:8080/api/v1`
-
-### Autenticação
-
-* **`POST /auth/login`**
-    * **Descrição:** Autentica um usuário existente e retorna um token JWT.
-    * **Request Body:**
-        ```json
-        {
-          "login": "nome_do_usuario",
-          "senha": "senha_do_usuario"
-        }
-        ```
-    * **Success Response (200 OK):**
-        ```json
-        {
-          "token": "SEU_TOKEN_JWT_AQUI",
-          "tipo": "Bearer"
-        }
-        ```
-    * **Error Response (401 Unauthorized):** Se as credenciais forem inválidas.
-
-### Usuários
-
-* **`POST /usuarios/registrar`**
-    * **Descrição:** Registra um novo usuário.
-    * **Request Body:**
-        ```json
-        {
-          "nome": "Nome Completo",
-          "email": "email@exemplo.com",
-          "nomeUsuario": "nome_usuario_unico",
-          "telefone": "(Opcional) 11912345678",
-          "senha": "senha_forte"
-        }
-        ```
-    * **Success Response (201 Created):**
-        * Header `Location`: URL do novo usuário (ex: `/api/v1/usuarios/1`)
-        * Body: Objeto do usuário criado (sem a senha).
-    * **Error Response (400 Bad Request):** Se dados forem inválidos, ou email/nome de usuário já existirem.
-
-* **`GET /usuarios`**
-    * **Descrição:** Lista todos os usuários registrados.
-    * **Autenticação:** Requerida (Token JWT no header `Authorization: Bearer <token>`).
-    * **Success Response (200 OK):** Array de objetos de usuário (sem senha).
-    * **Success Response (204 No Content):** Se não houver usuários.
-    * **Error Response (401 Unauthorized / 403 Forbidden):** Se não autenticado ou sem permissão.
-
-* **`GET /usuarios/{id}`**
-    * **Descrição:** Busca um usuário específico pelo seu ID.
-    * **Autenticação:** Requerida.
-    * **Success Response (200 OK):** Objeto do usuário encontrado (sem senha).
-    * **Error Response (404 Not Found):** Se o usuário com o ID especificado não existir.
-    * **Error Response (401 Unauthorized / 403 Forbidden):** Se não autenticado ou sem permissão.
-
-## 7. Próximos Passos (TODO)
-
-* Implementar endpoints PUT/DELETE para usuários.
-* Implementar gerenciamento de perfil do usuário (editar dados, foto, etc.).
-* Adicionar sistema de Papéis (Roles) e permissões mais granulares.
-* Criar DTOs de resposta para controlar os dados expostos pela API.
-* Proteger a rota `/dashboard` no frontend.
-* Implementar o serviço de API (`authService.ts`) no frontend para encapsular as chamadas Axios.
-* Refatorar para usar Context API ou outra lib de estado global no frontend para gerenciar autenticação.
-* Implementar as demais funcionalidades (busca, avaliações, chat, etc.).
-* Configurar CORS de forma mais segura para produção.
-* Implementar testes unitários e de integração.
+* **Java (JDK) 21** ou superior.
+* **Node.js** (versão LTS, ex: 18.x ou 20.x).
+* **PostgreSQL** instalado e com um servidor ativo.
 
 ---
+
+### 1. Configuração do Backend
+
+1.  **Crie o Banco de Dados:**
+    * No seu PostgreSQL, crie um novo banco de dados. O nome padrão usado no projeto é `conectapro_db`.
+
+2.  **Configure as Propriedades:**
+    * Navegue até a pasta `backend/`.
+    * Abra o arquivo `src/main/resources/application.properties`.
+    * Ajuste as credenciais do seu PostgreSQL.
+
+      ```properties
+      # Conexão com o Banco
+      spring.datasource.url=jdbc:postgresql://localhost:5432/conectapro_db
+      spring.datasource.username=seu_usuario_postgres
+      spring.datasource.password=sua_senha_postgres
+      
+      # Ativa o perfil 'dev' para criar usuários de teste na primeira inicialização
+      spring.profiles.active=dev
+      ```
+
+3.  **Execute o Backend:**
+    * Abra um terminal na pasta raiz `backend/`.
+    * Rode o comando:
+        * No Windows: `gradlew.bat bootRun`
+        * No Linux/macOS: `./gradlew bootRun`
+    * O backend estará rodando em `http://localhost:8080`.
+    * **Usuários de Teste:** Com o perfil `dev`, os usuários `admin` (senha: `admin123`) e `user` (senha: `user123`) serão criados automaticamente.
+
+---
+
+### 2. Configuração do Frontend
+
+1.  **Configure as Variáveis de Ambiente:**
+    * Navegue até a pasta `frontend/`.
+    * Crie um arquivo chamado `.env.local` na raiz desta pasta.
+    * Adicione as seguintes variáveis:
+
+      ```
+      # URL da API Backend
+      NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
+
+      # URL da sua aplicação frontend
+      AUTH_URL=http://localhost:3000
+
+      # Chave secreta para o NextAuth.js
+      # Esta chave DEVE SER COMPARTILHADA com o backend.
+      AUTH_SECRET=SUA_CHAVE_SECRETA_UNICA_AQUI
+      ```
+    * **Aviso Importante:** A chave `AUTH_SECRET` aqui e a `api.security.jwt.secret` no backend **DEVEM TER EXATAMENTE O MESMO VALOR**.
+
+2.  **Sincronize a Chave Secreta com o Backend:**
+    * Abra novamente o arquivo `backend/src/main/resources/application.properties`.
+    * Encontre a propriedade `api.security.jwt.secret`.
+    * **Cole o mesmo valor** que você usou para `AUTH_SECRET` no frontend.
+
+      ```properties
+      # Chave secreta para o JWT
+      api.security.jwt.secret=SUA_CHAVE_SECRETA_UNICA_AQUI 
+      ```
+    * *Dica para gerar uma chave segura no terminal: `openssl rand -base64 32`*
+
+
+3.  **Instale as Dependências:**
+    * Abra um terminal na pasta raiz `frontend/`.
+    * Rode: `npm install`
+
+4.  **Execute o Frontend:**
+    * No mesmo terminal, rode: `npm run dev`
+    * A aplicação estará acessível em `http://localhost:3000`.
+
+## 📖 Endpoints Principais da API
+
+A URL base da API é `http://localhost:8080/api/v1`.
+
+| Método | Endpoint                        | Descrição                                        | Autenticação? |
+| :----- | :------------------------------ | :----------------------------------------------- | :------------ |
+| `POST` | `/auth/login`                   | Autentica um usuário e retorna um token JWT.     | Não           |
+| `POST` | `/usuarios/registrar`           | Registra um novo usuário.                        | Não           |
+| `GET`  | `/postagens`                    | Lista as postagens do feed principal.            | Não           |
+| `GET`  | `/usuarios/{username}/perfil`   | Busca os dados do perfil de um usuário.          | Não           |
+| `GET`  | `/areas-de-atuacao`             | Lista todas as áreas de atuação disponíveis.     | Não           |
+| `POST` | `/postagens`                    | Cria uma nova postagem.                          | **Sim** |
+| `PUT`  | `/usuarios/perfil`              | Atualiza o perfil do usuário autenticado.        | **Sim** |
+| `POST` | `/usuarios/{user}/seguir`       | Segue o usuário especificado.                    | **Sim** |
+| `POST` | `/usuarios/{user}/deixar-de-seguir` | Deixa de seguir o usuário especificado.          | **Sim** |
+| `POST` | `/avaliacoes`                   | Cria uma nova avaliação para um usuário.         | **Sim** |
+
+## 🔮 Próximos Passos
+
+* [ ] **Feed "Seguindo":** Alterar o feed principal para mostrar um feed cronológico apenas com postagens de usuários que o usuário logado segue.
+* [ ] **Upload de Imagens:** Implementar um sistema de upload de arquivos para as fotos de perfil e capa (ex: para Cloudinary ou S3), em vez de usar URLs.
+* [ ] **Notificações:** Criar um sistema de notificações para eventos como "novo seguidor", "nova avaliação", "curtida no post", etc.
+* [ ] **Chat / Mensagens Diretas:** Implementar uma funcionalidade de chat em tempo real entre usuários.
+* [ ] **Testes:** Adicionar testes unitários (JUnit, Mockito) e de integração para garantir a estabilidade e a qualidade do código.
+* [ ] **Refatoração e Otimização:** Melhorar a UI/UX, otimizar queries do banco de dados e refatorar componentes conforme a aplicação cresce.
+

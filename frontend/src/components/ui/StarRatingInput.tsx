@@ -24,7 +24,7 @@ const StarRatingInput: React.FC<StarRatingInputProps> = ({ rating, setRating, to
                         onMouseEnter={() => setHover(starValue)}
                         onMouseLeave={() => setHover(0)}
                     >
-                        &#9733; {/* Caractere de estrela */}
+                        &#9733;
                     </button>
                 );
             })}

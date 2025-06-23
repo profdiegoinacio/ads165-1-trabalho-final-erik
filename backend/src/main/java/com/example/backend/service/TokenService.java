@@ -22,29 +22,26 @@ public class TokenService {
 
     private static final Logger log = LoggerFactory.getLogger(TokenService.class);
 
-    // Injeta os valores do application.properties
     @Value("${api.security.jwt.secret}")
     private String secret;
 
     @Value("${api.security.jwt.expiration-ms}")
     private long expirationMs;
 
-    private static final String ISSUER = "API ConectaPro"; // Emissor do token
+    private static final String ISSUER = "API ConectaPro";
 
-    public String gerarToken(Usuario usuario) { // Recebe Usuario diretamente
+    public String gerarToken(Usuario usuario) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
 
-            // Coleta os papéis do usuário
             List<String> rolesList = usuario.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList());
 
             String token = JWT.create()
                     .withIssuer(ISSUER)
-                    .withSubject(usuario.getNomeUsuario()) // username
-                    .withClaim("roles", rolesList)         // Adiciona a claim de papéis
-                    // .withClaim("userId", usuario.getId()) // Exemplo de outra claim útil
+                    .withSubject(usuario.getNomeUsuario())
+                    .withClaim("roles", rolesList)
                     .withExpiresAt(calcularDataExpiracao())
                     .sign(algorithm);
             log.debug("Token gerado para usuário: {} com papéis: {}", usuario.getNomeUsuario(), rolesList);
@@ -59,19 +56,18 @@ public class TokenService {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.require(algorithm)
-                    .withIssuer(ISSUER) // Verifica se o emissor é o esperado
+                    .withIssuer(ISSUER)
                     .build()
-                    .verify(tokenJWT) // Verifica a assinatura e validade
-                    .getSubject(); // Retorna o subject (nomeUsuario)
+                    .verify(tokenJWT)
+                    .getSubject();
         } catch (JWTVerificationException exception){
             log.warn("Token JWT inválido ou expirado: {}", exception.getMessage());
-            // Retornar null ou lançar exceção dependendo de como o filtro tratará
             return null;
         }
     }
 
     private Instant calcularDataExpiracao() {
-        return LocalDateTime.now().plusNanos(expirationMs * 1_000_000L) // Convertendo ms para nanos
-                .toInstant(ZoneOffset.of("-03:00")); // Ajuste para o fuso horário de Brasília
+        return LocalDateTime.now().plusNanos(expirationMs * 1_000_000L)
+                .toInstant(ZoneOffset.of("-03:00"));
     }
 }

@@ -1,33 +1,29 @@
 package com.example.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
-
+import lombok.NoArgsConstructor;
+import java.util.List;
 import java.util.Set;
 
-/**
- * DTO para enviar os dados completos de um perfil para o frontend.
- */
 @Data
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PerfilResponseDTO {
-    // Dados do Usuário
     private Long id;
     private String nome;
     private String nomeUsuario;
-    private String email; // Opcional, talvez queira mostrar no perfil
-    private Set<String> roles;
-
-    private boolean seguindoPeloUsuarioLogado;
-
-    private Double notaMedia;
-    private Long totalAvaliacoes;
-
-
-    // Dados do Perfil
+    private String email;
     private String bio;
     private String formacao;
     private String fotoPerfilUrl;
     private String fotoCapaUrl;
-
-    // Construtor para facilitar a criação a partir da entidade Usuario
-
+    private boolean isProfissional;
+    private Double notaMedia;
+    private long totalAvaliacoes;
+    private int totalSeguidores;
+    private int totalSeguindo;
+    private boolean seguindoPeloUsuarioLogado;
+    private Set<String> roles;
+    private List<AreaDeAtuacaoResponseDTO> areasDeAtuacao;
 }

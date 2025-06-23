@@ -11,9 +11,6 @@ import java.util.List;
 @AllArgsConstructor
 public class AuthResponseDTO {
     private String token;
-    private String username; // Ou nomeUsuario
+    private String username;
     private List<String> roles;
-    // Adicione outros campos do usuário que o frontend possa precisar, como 'id' ou 'email'
-    // private Long id;
-    // private String email;
 }

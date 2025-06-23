@@ -1,7 +1,9 @@
 package com.example.backend.config;
 
-import com.example.backend.domain.Usuario; // <- Usar nossa entidade Usuario
-import com.example.backend.repository.UsuarioRepository; // <- Usar nosso UsuarioRepository
+import com.example.backend.domain.AreaDeAtuacao;
+import com.example.backend.domain.Usuario;
+import com.example.backend.repository.AreaDeAtuacaoRepository;
+import com.example.backend.repository.UsuarioRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,49 +12,69 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Configuration
-@Profile("dev") // Executa apenas se o perfil "dev" estiver ativo
+@Profile("dev")
 public class DbInitialization {
 
-    // Removidas referências a ProdutoRepository e CategoriaRepository que não são usados aqui
-    private final UsuarioRepository usuarioRepository; // <- Mudança aqui
-    private final PasswordEncoder passwordEncoder;
-
-    // Construtor usando os nomes corretos
-    public DbInitialization(UsuarioRepository usuarioRepository, // <- Mudança aqui
-                            PasswordEncoder passwordEncoder) {
-        this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
     @Bean
-    CommandLineRunner initDatabase() { // Removida a injeção duplicada, usará os campos da classe
+    public CommandLineRunner inicializarDados(
+            UsuarioRepository usuarioRepository,
+            PasswordEncoder passwordEncoder,
+            AreaDeAtuacaoRepository areaDeAtuacaoRepository) {
+
         return args -> {
-            // Verifica se já existem usuários para não duplicar
-            if (this.usuarioRepository.count() == 0) { // <- Usa this.usuarioRepository
+            if (areaDeAtuacaoRepository.count() == 0) {
+                System.out.println(">>>> Criando um conjunto inicial de Áreas de Atuação...");
+
+                List<String> nomesDasAreas = List.of(
+                        "Design Gráfico", "Desenvolvimento Web", "Marketing Digital", "Elétrica Predial",
+                        "Fotografia", "Edição de Vídeo", "Redação e Copywriting", "Consultoria de Negócios",
+                        "Contabilidade", "Marcenaria", "Jardinagem", "Aulas Particulares", "Encanamento",
+                        "Pintura Residencial", "Desenvolvimento Mobile"
+                );
+
+                List<AreaDeAtuacao> areas = nomesDasAreas.stream().map(nome -> {
+                    AreaDeAtuacao area = new AreaDeAtuacao();
+                    area.setNome(nome);
+                    return area;
+                }).collect(Collectors.toList());
+
+                areaDeAtuacaoRepository.saveAll(areas);
+                System.out.println(">>>> " + areas.size() + " áreas de atuação criadas com sucesso!");
+            }
+            if (usuarioRepository.count() == 0) {
                 System.out.println(">>>> Criando usuários de teste (admin e user)...");
+
+                AreaDeAtuacao design = areaDeAtuacaoRepository.findById(1L).orElse(null);
+                AreaDeAtuacao webdev = areaDeAtuacaoRepository.findById(2L).orElse(null);
+                AreaDeAtuacao marketing = areaDeAtuacaoRepository.findById(3L).orElse(null);
 
                 Usuario admin = new Usuario();
                 admin.setNome("Administrador Principal");
-                admin.setEmail("admin@admin.com");
-                admin.setNomeUsuario("admin"); // Username para login
-                admin.setSenha(passwordEncoder.encode("admin123")); // Senha a ser criptografada
-                admin.setRoles(Set.of("ROLE_ADMIN", "ROLE_USER")); // Papéis
+                admin.setEmail("admin@conectapro.com");
+                admin.setNomeUsuario("admin");
+                admin.setSenha(passwordEncoder.encode("admin123"));
+                admin.setRoles(Set.of("ROLE_ADMIN", "ROLE_USER"));
+                if (webdev != null && marketing != null) {
+                    admin.setAreasDeAtuacao(Set.of(webdev, marketing));
+                }
                 admin.setEnabled(true);
 
                 Usuario user = new Usuario();
-                user.setNome("Usuário Comum");
-                user.setEmail("user@user.com");
-                user.setNomeUsuario("user"); // Username para login
-                user.setSenha(passwordEncoder.encode("user123")); // Senha a ser criptografada
-                user.setRoles(Set.of("ROLE_USER")); // Papel
+                user.setNome("Usuário Profissional");
+                user.setEmail("user@conectapro.com");
+                user.setNomeUsuario("user");
+                user.setSenha(passwordEncoder.encode("user123"));
+                user.setRoles(Set.of("ROLE_USER"));
+                if (design != null) {
+                    user.setAreasDeAtuacao(Set.of(design));
+                }
                 user.setEnabled(true);
 
-                this.usuarioRepository.saveAll(List.of(admin, user)); // <- Usa this.usuarioRepository
+                usuarioRepository.saveAll(List.of(admin, user));
                 System.out.println(">>>> Usuários de teste criados com sucesso!");
-            } else {
-                System.out.println(">>>> Usuários de teste já existem ou a tabela não está vazia.");
             }
         };
     }

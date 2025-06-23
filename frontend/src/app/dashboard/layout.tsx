@@ -1,30 +1,25 @@
-// src/app/dashboard/layout.tsx
-import React from 'react';
-import SidebarEsquerda from '@/components/layout/SidebarEsquerda';
-import SidebarDireita from '@/components/layout/SidebarDireita';
+import SidebarEsquerda from "@/components/layout/SidebarEsquerda";
+import SidebarDireita from "@/components/layout/SidebarDireita";
 
 export default function DashboardLayout({
                                             children,
-                                        }: {
+                                        }: Readonly<{
     children: React.ReactNode;
-}) {
+}>) {
     return (
-        // Container principal que ocupa a tela toda
-        <div className="min-h-screen bg-black text-white">
-            {/* Container que centraliza o conteúdo e define o layout flex */}
-            <div className="container mx-auto flex justify-center max-w-screen-lg">
-                {/* Coluna da Esquerda (Menu) */}
+        <div className="bg-black min-h-screen w-full flex justify-center">
+
+            <aside className="w-64 border-r border-gray-800 h-screen sticky top-0 hidden md:block">
                 <SidebarEsquerda />
+            </aside>
+            <main className="w-full md:w-[600px] border-r border-gray-800">
+                {children}
+            </main>
 
-                {/* Coluna Central (Conteúdo Principal / Feed com scroll) */}
-                <main className="w-full max-w-[600px] border-x border-gray-800">
-                    {/* O conteúdo da page.tsx do dashboard será renderizado aqui */}
-                    {children}
-                </main>
-
-                {/* Coluna da Direita (Busca e Destaques) */}
+            <aside className="h-screen sticky top-0 hidden lg:block">
                 <SidebarDireita />
-            </div>
+            </aside>
+
         </div>
     );
 }

@@ -10,11 +10,9 @@ public class PropertyLogger {
 
     private static final Logger log = LoggerFactory.getLogger(PropertyLogger.class);
 
-    // Injeta o valor da propriedade ddl-auto
     @Value("${spring.jpa.hibernate.ddl-auto:not-set}")
     private String ddlAutoValue;
 
-    // Injeta os perfis ativos (ou 'none' se nenhum)
     @Value("${spring.profiles.active:none}")
     private String activeProfiles;
 

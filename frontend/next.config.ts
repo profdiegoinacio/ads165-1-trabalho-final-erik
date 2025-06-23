@@ -1,16 +1,16 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
     images: {
         remotePatterns: [
             {
                 protocol: 'https',
-                hostname: '**', // O wildcard duplo permite QUALQUER hostname
+                hostname: 'res.cloudinary.com',
             },
             {
-                protocol: 'http',
-                hostname: '**', // Também para http, se necessário
+                protocol: 'https',
+                hostname: 'thumbs.dreamstime.com',
             },
+
         ],
     },
 };

@@ -1,12 +1,10 @@
 package com.example.backend.service;
 
+import com.example.backend.domain.AreaDeAtuacao;
 import com.example.backend.domain.Perfil;
 import com.example.backend.domain.Usuario;
-import com.example.backend.dto.PerfilResponseDTO;
-import com.example.backend.dto.PerfilUpdateRequestDTO;
-import com.example.backend.dto.UsuarioRegistroDTO;
-import com.example.backend.dto.UsuarioResponseDTO;
-import com.example.backend.dto.UsuarioUpdateRequestDTO;
+import com.example.backend.dto.*;
+import com.example.backend.repository.AreaDeAtuacaoRepository;
 import com.example.backend.repository.UsuarioRepository;
 import com.example.backend.repository.specification.UsuarioSpecification;
 import jakarta.persistence.EntityNotFoundException;
@@ -34,12 +32,15 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final AvaliacaoService avaliacaoService;
+    private final AreaDeAtuacaoRepository areaDeAtuacaoRepository;
 
     @Autowired
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, AvaliacaoService avaliacaoService) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
+                          AvaliacaoService avaliacaoService, AreaDeAtuacaoRepository areaDeAtuacaoRepository) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.avaliacaoService = avaliacaoService;
+        this.areaDeAtuacaoRepository = areaDeAtuacaoRepository;
     }
 
     @Transactional
@@ -64,16 +65,10 @@ public class UsuarioService {
         novoUsuario.setPerfil(novoPerfil);
 
         Set<String> rolesParaSalvar = new HashSet<>();
-        if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
-            dto.getRoles().forEach(role -> rolesParaSalvar.add(role.startsWith("ROLE_") ? role : "ROLE_" + role.toUpperCase()));
-        } else {
-            rolesParaSalvar.add("ROLE_USER");
-        }
+        rolesParaSalvar.add("ROLE_USER");
         novoUsuario.setRoles(rolesParaSalvar);
 
-        Usuario usuarioSalvo = usuarioRepository.save(novoUsuario);
-        log.info("Usuário {} registrado com papéis {} e ID {}", usuarioSalvo.getNomeUsuario(), usuarioSalvo.getRoles(), usuarioSalvo.getId());
-        return usuarioSalvo;
+        return usuarioRepository.save(novoUsuario);
     }
 
     @Transactional(readOnly = true)
@@ -84,42 +79,37 @@ public class UsuarioService {
     }
 
     @Transactional
-    public PerfilResponseDTO atualizarDadosPrincipais(String usernameAtual, UsuarioUpdateRequestDTO dto) {
+    public PerfilResponseDTO atualizarPerfilCompleto(String usernameAtual, PerfilUpdateRequestDTO dto) {
         Usuario usuario = usuarioRepository.findByNomeUsuario(usernameAtual)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado: " + usernameAtual));
 
-        if (dto.getNome() != null && !dto.getNome().isEmpty()) {
-            usuario.setNome(dto.getNome());
-        }
-        if (dto.getNomeUsuario() != null && !dto.getNomeUsuario().isEmpty() && !dto.getNomeUsuario().equals(usernameAtual)) {
+        if (dto.getNome() != null && !dto.getNome().isBlank()) usuario.setNome(dto.getNome());
+        if (dto.getNomeUsuario() != null && !dto.getNomeUsuario().isBlank() && !dto.getNomeUsuario().equals(usernameAtual)) {
             if (usuarioRepository.existsByNomeUsuario(dto.getNomeUsuario())) {
                 throw new IllegalArgumentException("Erro: Nome de usuário já está em uso!");
             }
             usuario.setNomeUsuario(dto.getNomeUsuario());
         }
-        usuarioRepository.save(usuario);
-        return buildPerfilResponseDTO(usuario, usernameAtual);
-    }
 
-    @Transactional
-    public PerfilResponseDTO atualizarPerfil(String username, PerfilUpdateRequestDTO dto) {
-        Usuario usuario = usuarioRepository.findByNomeUsuario(username)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado: " + username));
+        Perfil perfil = usuario.getPerfil();
+        if (perfil == null) {
+            perfil = new Perfil();
+            perfil.setUsuario(usuario);
+            usuario.setPerfil(perfil);
+        }
+        if (dto.getBio() != null) perfil.setBio(dto.getBio());
+        if (dto.getFormacao() != null) perfil.setFormacao(dto.getFormacao());
+        if (dto.getFotoPerfilUrl() != null) perfil.setFotoPerfilUrl(dto.getFotoPerfilUrl());
+        if (dto.getFotoCapaUrl() != null) perfil.setFotoCapaUrl(dto.getFotoCapaUrl());
+        if (dto.getIsProfissional() != null) perfil.setProfissional(dto.getIsProfissional());
 
-        Perfil perfilParaAtualizar = usuario.getPerfil();
-        if (perfilParaAtualizar == null) {
-            perfilParaAtualizar = new Perfil();
-            perfilParaAtualizar.setUsuario(usuario);
-            usuario.setPerfil(perfilParaAtualizar);
+        if (dto.getAreasDeAtuacaoIds() != null) {
+            Set<AreaDeAtuacao> novasAreas = new HashSet<>(areaDeAtuacaoRepository.findAllById(dto.getAreasDeAtuacaoIds()));
+            usuario.setAreasDeAtuacao(novasAreas);
         }
 
-        if (dto.getBio() != null) perfilParaAtualizar.setBio(dto.getBio());
-        if (dto.getFormacao() != null) perfilParaAtualizar.setFormacao(dto.getFormacao());
-        if (dto.getFotoPerfilUrl() != null) perfilParaAtualizar.setFotoPerfilUrl(dto.getFotoPerfilUrl());
-        if (dto.getFotoCapaUrl() != null) perfilParaAtualizar.setFotoCapaUrl(dto.getFotoCapaUrl());
-
         usuarioRepository.save(usuario);
-        return buildPerfilResponseDTO(usuario, username);
+        return buildPerfilResponseDTO(usuario, usernameAtual);
     }
 
     @Transactional
@@ -127,59 +117,24 @@ public class UsuarioService {
         if (usernameSeguidor.equalsIgnoreCase(usernameParaSeguir)) {
             throw new IllegalArgumentException("Você não pode seguir a si mesmo.");
         }
-        Usuario seguidor = usuarioRepository.findByNomeUsuario(usernameSeguidor)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário seguidor não encontrado."));
+        Usuario seguidor = usuarioRepository.findByNomeUsuarioWithSeguindo(usernameSeguidor)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário seguidor não encontrado: " + usernameSeguidor));
         Usuario paraSeguir = usuarioRepository.findByNomeUsuario(usernameParaSeguir)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário a ser seguido não encontrado."));
-        seguidor.getSeguindo().add(paraSeguir);
+
+        if (!seguidor.getSeguindo().contains(paraSeguir)) {
+            seguidor.getSeguindo().add(paraSeguir);
+        }
     }
 
     @Transactional
     public void deixarDeSeguirUsuario(String usernameSeguidor, String usernameParaDeixarDeSeguir) {
-        Usuario seguidor = usuarioRepository.findByNomeUsuario(usernameSeguidor)
-                .orElseThrow(() -> new EntityNotFoundException("Usuário seguidor não encontrado."));
+        Usuario seguidor = usuarioRepository.findByNomeUsuarioWithSeguindo(usernameSeguidor)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário seguidor não encontrado: " + usernameSeguidor));
         Usuario paraDeixarDeSeguir = usuarioRepository.findByNomeUsuario(usernameParaDeixarDeSeguir)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário a ser deixado de seguir não encontrado."));
+
         seguidor.getSeguindo().remove(paraDeixarDeSeguir);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<UsuarioResponseDTO> buscarUsuarios(String query, Pageable pageable) {
-        Specification<Usuario> spec = UsuarioSpecification.comFiltroDeNome(query);
-        Page<Usuario> usuarios = usuarioRepository.findAll(spec, pageable);
-        return usuarios.map(UsuarioResponseDTO::new);
-    }
-
-    // Método helper privado para construir o PerfilResponseDTO, agora com ambos os parâmetros
-    private PerfilResponseDTO buildPerfilResponseDTO(Usuario usuarioDoPerfil, String usuarioLogadoUsername) {
-        Double notaMedia = avaliacaoService.getNotaMediaPorUsuario(usuarioDoPerfil);
-        long totalAvaliacoes = avaliacaoService.getTotalAvaliacoesPorUsuario(usuarioDoPerfil);
-
-        PerfilResponseDTO dto = new PerfilResponseDTO();
-        dto.setId(usuarioDoPerfil.getId());
-        dto.setNome(usuarioDoPerfil.getNome());
-        dto.setNomeUsuario(usuarioDoPerfil.getNomeUsuario());
-        dto.setEmail(usuarioDoPerfil.getEmail());
-        dto.setRoles(usuarioDoPerfil.getRoles());
-        dto.setNotaMedia(notaMedia);
-        dto.setTotalAvaliacoes(totalAvaliacoes);
-
-        boolean estaSeguindo = false;
-        if (usuarioLogadoUsername != null && !usuarioLogadoUsername.equals(usuarioDoPerfil.getNomeUsuario())) {
-            estaSeguindo = usuarioRepository.findByNomeUsuario(usuarioLogadoUsername)
-                    .map(u -> u.getSeguindo().contains(usuarioDoPerfil))
-                    .orElse(false);
-        }
-        dto.setSeguindoPeloUsuarioLogado(estaSeguindo);
-
-        if (usuarioDoPerfil.getPerfil() != null) {
-            dto.setBio(usuarioDoPerfil.getPerfil().getBio());
-            dto.setFormacao(usuarioDoPerfil.getPerfil().getFormacao());
-            dto.setFotoPerfilUrl(usuarioDoPerfil.getPerfil().getFotoPerfilUrl());
-            dto.setFotoCapaUrl(usuarioDoPerfil.getPerfil().getFotoCapaUrl());
-        }
-
-        return dto;
     }
 
     @Transactional(readOnly = true)
@@ -192,5 +147,83 @@ public class UsuarioService {
     public List<Usuario> listarTodos() {
         log.info("Listando todos os usuários do banco de dados");
         return usuarioRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UsuarioResponseDTO> buscarUsuarios(String query, Long areaId, Pageable pageable) {
+        Specification<Usuario> spec = UsuarioSpecification.comFiltros(query, areaId);
+        Page<Usuario> usuarios = usuarioRepository.findAll(spec, pageable);
+        return usuarios.map(this::converterUsuarioParaResponseDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UsuarioResponseDTO> buscarProfissionais(Pageable pageable) {
+        return usuarioRepository.findByPerfilIsProfissional(true, pageable).map(this::converterUsuarioParaResponseDTO);
+    }
+
+    private PerfilResponseDTO buildPerfilResponseDTO(Usuario usuarioDoPerfil, String usuarioLogadoUsername) {
+        Double notaMedia = avaliacaoService.getNotaMediaPorUsuario(usuarioDoPerfil);
+        long totalAvaliacoes = avaliacaoService.getTotalAvaliacoesPorUsuario(usuarioDoPerfil);
+        int totalSeguidores = usuarioRepository.countSeguidoresById(usuarioDoPerfil.getId());
+        int totalSeguindo = usuarioRepository.countSeguindoById(usuarioDoPerfil.getId());
+
+        PerfilResponseDTO dto = new PerfilResponseDTO();
+        dto.setId(usuarioDoPerfil.getId());
+        dto.setNome(usuarioDoPerfil.getNome());
+        dto.setNomeUsuario(usuarioDoPerfil.getNomeUsuario());
+        dto.setEmail(usuarioDoPerfil.getEmail());
+        dto.setRoles(usuarioDoPerfil.getRoles());
+        dto.setNotaMedia(notaMedia);
+        dto.setTotalAvaliacoes(totalAvaliacoes);
+        dto.setTotalSeguidores(totalSeguidores);
+        dto.setTotalSeguindo(totalSeguindo);
+
+        boolean estaSeguindo = false;
+        if (usuarioLogadoUsername != null && !usuarioLogadoUsername.equals(usuarioDoPerfil.getNomeUsuario())) {
+            estaSeguindo = usuarioRepository.findByNomeUsuarioWithSeguindo(usuarioLogadoUsername)
+                    .map(u -> u.getSeguindo().contains(usuarioDoPerfil))
+                    .orElse(false);
+        }
+        dto.setSeguindoPeloUsuarioLogado(estaSeguindo);
+
+        if (usuarioDoPerfil.getPerfil() != null) {
+            dto.setBio(usuarioDoPerfil.getPerfil().getBio());
+            dto.setFormacao(usuarioDoPerfil.getPerfil().getFormacao());
+            dto.setFotoPerfilUrl(usuarioDoPerfil.getPerfil().getFotoPerfilUrl());
+            dto.setFotoCapaUrl(usuarioDoPerfil.getPerfil().getFotoCapaUrl());
+            dto.setProfissional(usuarioDoPerfil.getPerfil().isProfissional());
+        }
+
+        if (usuarioDoPerfil.getAreasDeAtuacao() != null && !usuarioDoPerfil.getAreasDeAtuacao().isEmpty()) {
+            List<AreaDeAtuacaoResponseDTO> areasDTO = usuarioDoPerfil.getAreasDeAtuacao().stream()
+                    .map(area -> new AreaDeAtuacaoResponseDTO(area.getId(), area.getNome()))
+                    .collect(Collectors.toList());
+            dto.setAreasDeAtuacao(areasDTO);
+        }
+        return dto;
+    }
+
+    private UsuarioResponseDTO converterUsuarioParaResponseDTO(Usuario usuario) {
+        UsuarioResponseDTO dto = new UsuarioResponseDTO();
+        dto.setId(usuario.getId());
+        dto.setNome(usuario.getNome());
+        dto.setNomeUsuario(usuario.getNomeUsuario());
+
+        if (usuario.getPerfil() != null) {
+            dto.setFotoPerfilUrl(usuario.getPerfil().getFotoPerfilUrl());
+            dto.setProfissional(usuario.getPerfil().isProfissional());
+        }
+
+        if (usuario.getAreasDeAtuacao() != null && !usuario.getAreasDeAtuacao().isEmpty()) {
+            List<AreaDeAtuacaoResponseDTO> areasDTO = usuario.getAreasDeAtuacao().stream()
+                    .map(area -> new AreaDeAtuacaoResponseDTO(area.getId(), area.getNome()))
+                    .collect(Collectors.toList());
+            dto.setAreasDeAtuacao(areasDTO);
+        }
+
+        Double notaMedia = avaliacaoService.getNotaMediaPorUsuario(usuario);
+        dto.setNotaMedia(notaMedia);
+
+        return dto;
     }
 }

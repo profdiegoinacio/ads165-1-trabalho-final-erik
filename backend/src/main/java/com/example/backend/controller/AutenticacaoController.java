@@ -3,7 +3,6 @@ package com.example.backend.controller;
 import com.example.backend.domain.Usuario;
 import com.example.backend.dto.AuthResponseDTO;
 import com.example.backend.dto.LoginDTO;
-import com.example.backend.dto.TokenDTO;
 import com.example.backend.service.TokenService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,13 +28,13 @@ public class AutenticacaoController {
     private static final Logger log = LoggerFactory.getLogger(AutenticacaoController.class);
 
     @Autowired
-    private AuthenticationManager authenticationManager; // Gerenciador de autenticação do Spring
+    private AuthenticationManager authenticationManager;
 
     @Autowired
-    private TokenService tokenService; // Nosso serviço de token
+    private TokenService tokenService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody @Valid LoginDTO loginDTO) { // Mude o tipo de retorno
+    public ResponseEntity<AuthResponseDTO> login(@RequestBody @Valid LoginDTO loginDTO) {
         log.info("Tentativa de login para usuário: {}", loginDTO.getLogin());
         try {
             UsernamePasswordAuthenticationToken authenticationToken =
@@ -52,10 +51,8 @@ public class AutenticacaoController {
             log.info("Login bem-sucedido para usuário: {}", loginDTO.getLogin());
             return ResponseEntity.ok(new AuthResponseDTO(
                     tokenJWT,
-                    usuarioAutenticado.getUsername(), // ou getNomeUsuario()
+                    usuarioAutenticado.getUsername(),
                     roles
-                    // , usuarioAutenticado.getId(), // Se adicionar id ao DTO
-                    // , usuarioAutenticado.getEmail() // Se adicionar email ao DTO
             ));
 
         } catch (Exception e) {

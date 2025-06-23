@@ -2,7 +2,7 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.AvaliacaoRequestDTO;
 import com.example.backend.dto.AvaliacaoResponseDTO;
-import com.example.backend.dto.PaginatedResponseDTO; // Importe o DTO de paginação
+import com.example.backend.dto.PaginatedResponseDTO;
 import com.example.backend.service.AvaliacaoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-// A rota base agora inclui o username do usuário avaliado
+
 @RequestMapping("/api/v1/usuarios/{username}/avaliacoes")
 public class AvaliacaoController {
 
@@ -27,9 +27,6 @@ public class AvaliacaoController {
         this.avaliacaoService = avaliacaoService;
     }
 
-    /**
-     * Endpoint público para listar todas as avaliações de um usuário específico.
-     */
     @GetMapping
     public ResponseEntity<PaginatedResponseDTO<AvaliacaoResponseDTO>> listarAvaliacoes(
             @PathVariable String username,
@@ -39,16 +36,13 @@ public class AvaliacaoController {
         return ResponseEntity.ok(new PaginatedResponseDTO<>(paginaDeAvaliacoes));
     }
 
-    /**
-     * Endpoint protegido para um usuário autenticado criar uma nova avaliação para outro usuário.
-     */
     @PostMapping
     public ResponseEntity<AvaliacaoResponseDTO> criarAvaliacao(
-            @PathVariable String username, // Username de quem está sendo avaliado (o avaliado)
+            @PathVariable String username,
             @RequestBody @Valid AvaliacaoRequestDTO dto,
-            Authentication authentication) { // Dados de quem está logado (o avaliador)
+            Authentication authentication) {
 
-        // Pega o nome de usuário de quem está fazendo a avaliação a partir do token
+
         String usernameAvaliador = authentication.getName();
 
         AvaliacaoResponseDTO avaliacaoCriada = avaliacaoService.criarAvaliacao(dto, usernameAvaliador, username);

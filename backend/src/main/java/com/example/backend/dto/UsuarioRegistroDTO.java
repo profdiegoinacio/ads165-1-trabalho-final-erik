@@ -23,7 +23,6 @@ public class UsuarioRegistroDTO {
     @Size(min = 3, max = 50, message = "Nome de usuário deve ter entre 3 e 50 caracteres")
     private String nomeUsuario;
 
-    // Validação de telefone pode ser mais específica (regex) ou opcional
     private String telefone;
 
     @NotBlank(message = "Senha não pode estar em branco")

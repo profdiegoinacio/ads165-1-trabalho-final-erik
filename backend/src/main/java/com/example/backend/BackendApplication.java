@@ -28,8 +28,6 @@ public class BackendApplication {
 		@Value("${spring.profiles.active:none}")
 		private String activeProfiles;
 
-
-		//Usado para verificar onde esta o erro que não esta gravando os dados no banco
 		@Override
 		public void run(ApplicationArguments args) throws Exception {
 			runnerLog.warn("----------------------------------------------------------");

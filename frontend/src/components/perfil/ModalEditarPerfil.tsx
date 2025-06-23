@@ -1,106 +1,143 @@
-// src/components/perfil/ModalEditarPerfil.tsx
 "use client";
 
-import React, { useState, useEffect, FormEvent } from 'react';
-import { useSession } from 'next-auth/react';
-import { PerfilUsuario } from '@/types/perfil';
+import { useState, FormEvent, useEffect } from 'react';
 import api from '@/lib/api';
-import Input from '../ui/Input';
-import Button from '../ui/Button';
+import { PerfilUsuario, AreaDeAtuacao } from '@/types';
 
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
     profileData: PerfilUsuario;
-    onProfileUpdate: (updatedProfile: PerfilUsuario) => void;
+    onProfileUpdate: () => void;
+    todasAsAreas: AreaDeAtuacao[];
 }
 
-export default function ModalEditarPerfil({ isOpen, onClose, profileData, onProfileUpdate }: ModalProps) {
-    // Estados para cada campo do formulário
-    const [nome, setNome] = useState('');
-    const [nomeUsuario, setNomeUsuario] = useState('');
-    const [bio, setBio] = useState('');
-    const [formacao, setFormacao] = useState('');
-    const [fotoPerfilUrl, setFotoPerfilUrl] = useState('');
-    const [fotoCapaUrl, setFotoCapaUrl] = useState('');
+export default function ModalEditarPerfil({ isOpen, onClose, profileData, onProfileUpdate, todasAsAreas }: ModalProps) {
+
+    const [formData, setFormData] = useState({
+        nome: profileData.nome,
+        nomeUsuario: profileData.nomeUsuario,
+        bio: profileData.bio || '',
+        formacao: profileData.formacao || '',
+        fotoPerfilUrl: profileData.fotoPerfilUrl || '',
+        fotoCapaUrl: profileData.fotoCapaUrl || '',
+        isProfissional: profileData.isProfissional || false,
+    });
+
+    const [selectedAreaIds, setSelectedAreaIds] = useState<Set<number>>(
+        new Set(profileData.areasDeAtuacao?.map(area => area.id) || [])
+    );
 
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    const { data: session } = useSession();
-
-    // Preenche o formulário com os dados atuais quando o modal abre ou os dados mudam
     useEffect(() => {
-        if (profileData) {
-            setNome(profileData.nome || '');
-            setNomeUsuario(profileData.nomeUsuario || '');
-            setBio(profileData.bio || '');
-            setFormacao(profileData.formacao || '');
-            setFotoPerfilUrl(profileData.fotoPerfilUrl || '');
-            setFotoCapaUrl(profileData.fotoCapaUrl || '');
+        if (isOpen) {
+            setFormData({
+                nome: profileData.nome,
+                nomeUsuario: profileData.nomeUsuario,
+                bio: profileData.bio || '',
+                formacao: profileData.formacao || '',
+                fotoPerfilUrl: profileData.fotoPerfilUrl || '',
+                fotoCapaUrl: profileData.fotoCapaUrl || '',
+                isProfissional: profileData.isProfissional || false,
+            });
+            setSelectedAreaIds(new Set(profileData.areasDeAtuacao?.map(area => area.id) || []));
         }
-    }, [profileData, isOpen]); // Roda quando o modal abre
+    }, [isOpen, profileData]);
 
-    if (!isOpen) return null;
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        const isCheckbox = type === 'checkbox';
+        setFormData(prev => ({
+            ...prev,
+            [name]: isCheckbox ? (e.target as HTMLInputElement).checked : value
+        }));
+    };
 
-    const handleSubmit = async (event: FormEvent) => {
-        event.preventDefault();
+    const handleCheckboxChange = (areaId: number) => {
+        const newSelectedAreaIds = new Set(selectedAreaIds);
+        if (newSelectedAreaIds.has(areaId)) {
+            newSelectedAreaIds.delete(areaId);
+        } else {
+            newSelectedAreaIds.add(areaId);
+        }
+        setSelectedAreaIds(newSelectedAreaIds);
+    };
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
         setIsLoading(true);
-        setError(null);
 
-        const token = session?.accessToken;
-        if (!token) {
-            setError("Sessão inválida.");
-            setIsLoading(false);
-            return;
-        }
+        const dadosParaAtualizar = {
+            ...formData,
+            areasDeAtuacaoIds: Array.from(selectedAreaIds)
+        };
 
         try {
-            // Vamos fazer as duas chamadas de atualização
-            const perfilUpdateData = { bio, formacao, fotoPerfilUrl, fotoCapaUrl };
-            const usuarioUpdateData = { nome, nomeUsuario };
-
-            // Promise.all executa as duas requisições em paralelo
-            const [perfilResponse, usuarioResponse] = await Promise.all([
-                api.put('/perfis/me', perfilUpdateData, { headers: { Authorization: `Bearer ${token}` } }),
-                api.patch('/usuarios/me/dados-principais', usuarioUpdateData, { headers: { Authorization: `Bearer ${token}` } })
-            ]);
-
-            // Usamos a resposta do PATCH de usuário, que contém todos os dados atualizados
-            onProfileUpdate(usuarioResponse.data);
+            await api.put('/usuarios/perfil', dadosParaAtualizar);
+            alert('Perfil atualizado com sucesso!');
+            onProfileUpdate();
             onClose();
-
-        } catch (err: any) {
-            console.error("Erro ao atualizar perfil:", err);
-            const errorMessage = err.response?.data?.message || err.response?.data || "Não foi possível atualizar o perfil.";
-            setError(errorMessage);
+        } catch (error) {
+            console.error("Erro ao atualizar perfil:", error);
+            alert('Falha ao atualizar o perfil.');
         } finally {
             setIsLoading(false);
         }
     };
 
+    if (!isOpen) return null;
+
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
-            <div className="bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-lg border border-gray-700 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-2xl font-bold mb-6 text-white">Editar Perfil</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && <p className="text-red-500 text-center text-sm">{error}</p>}
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 overflow-y-auto p-4">
+            <div className="bg-gray-900 text-white p-6 rounded-lg w-full max-w-lg">
+                <h2 className="text-2xl font-bold mb-4">Editar Perfil</h2>
+                <form onSubmit={handleSubmit}>
 
-                    <Input id="nome" label="Nome" type="text" value={nome} onChange={(e) => setNome(e.target.value)} />
-                    <Input id="nomeUsuario" label="Nome de Usuário (@)" type="text" value={nomeUsuario} onChange={(e) => setNomeUsuario(e.target.value)} />
-
-                    <div>
-                        <label htmlFor="bio" className="block text-sm font-medium text-gray-400 mb-1">Biografia</label>
-                        <textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={4} className="w-full p-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                    <div className="my-4">
+                        <label htmlFor="nome">Nome Completo</label>
+                        <input name="nome" id="nome" value={formData.nome} onChange={handleInputChange} className="w-full p-2 bg-gray-800 rounded mt-1"/>
+                    </div>
+                    <div className="my-4">
+                        <label htmlFor="bio">Bio</label>
+                        <textarea name="bio" id="bio" value={formData.bio} onChange={handleInputChange} className="w-full p-2 bg-gray-800 rounded mt-1"/>
+                    </div>
+                    <div className="my-4">
+                        <label htmlFor="formacao">Formação</label>
+                        <input name="formacao" id="formacao" value={formData.formacao} onChange={handleInputChange} className="w-full p-2 bg-gray-800 rounded mt-1"/>
+                    </div>
+                    <div className="my-4">
+                        <label htmlFor="fotoPerfilUrl">URL da Foto de Perfil</label>
+                        <input name="fotoPerfilUrl" id="fotoPerfilUrl" value={formData.fotoPerfilUrl} onChange={handleInputChange} className="w-full p-2 bg-gray-800 rounded mt-1"/>
+                    </div>
+                    <div className="my-4">
+                        <label htmlFor="fotoCapaUrl">URL da Foto de Capa</label>
+                        <input name="fotoCapaUrl" id="fotoCapaUrl" value={formData.fotoCapaUrl} onChange={handleInputChange} className="w-full p-2 bg-gray-800 rounded mt-1"/>
+                    </div>
+                    <div className="my-4">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" name="isProfissional" checked={formData.isProfissional} onChange={handleInputChange} />
+                            <span>Sou um profissional</span>
+                        </label>
                     </div>
 
-                    <Input id="formacao" label="Formação / Especialidade" type="text" value={formacao} onChange={(e) => setFormacao(e.target.value)} />
-                    <Input id="fotoPerfilUrl" label="URL da Foto de Perfil" type="text" value={fotoPerfilUrl} onChange={(e) => setFotoPerfilUrl(e.target.value)} />
-                    <Input id="fotoCapaUrl" label="URL da Foto de Capa" type="text" value={fotoCapaUrl} onChange={(e) => setFotoCapaUrl(e.target.value)} />
+                    <h3 className="text-lg font-semibold mt-6 mb-2">Suas Áreas de Atuação</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {todasAsAreas.map((area) => (
+                            <div key={area.id}>
+                                <label className="flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" checked={selectedAreaIds.has(area.id)} onChange={() => handleCheckboxChange(area.id)} />
+                                    <span>{area.nome}</span>
+                                </label>
+                            </div>
+                        ))}
+                    </div>
 
-                    <div className="flex justify-end space-x-4 pt-4">
-                        <Button type="button" onClick={onClose} disabled={isLoading} className="bg-gray-600 hover:bg-gray-700 w-auto px-6">Cancelar</Button>
-                        <Button type="submit" isLoading={isLoading} disabled={isLoading} className="w-auto px-6">Salvar Alterações</Button>
+                    <div className="flex justify-end space-x-4 mt-6">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600">Cancelar</button>
+                        <button type="submit" disabled={isLoading} className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500 disabled:bg-gray-500">
+                            {isLoading ? 'Salvando...' : 'Salvar'}
+                        </button>
                     </div>
                 </form>
             </div>

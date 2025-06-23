@@ -1,22 +1,20 @@
 "use client";
 
 import React, { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation'; // Pode ser usado para redirecionar após registro
-import Link from 'next/link'; // Import do Link do Next.js para navegação
-import api from '@/services/axiosConfig'; // Importa nossa instância axios (ajuste o path se necessário)
-import axios, { AxiosError } from 'axios'; // Import AxiosError para tipagem de erro
-import Input from '@/components/ui/Input'; // Importa o componente Input
-import Button from '@/components/ui/Button'; // Importa o componente Button
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import api from '@/services/axiosConfig';
+import axios, { AxiosError } from 'axios';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
-// Interface para o tipo de erro esperado da API (pode mover para um arquivo de tipos)
 interface ApiErrorData {
     message?: string;
 }
 
-export default function PaginaRegistro() { // Renomeado de volta
+export default function PaginaRegistro() {
     const router = useRouter();
 
-    // --- Estados para os Campos do Formulário de Registro ---
     const [nome, setNome] = useState('');
     const [email, setEmail] = useState('');
     const [nomeUsuarioReg, setNomeUsuarioReg] = useState('');
@@ -25,17 +23,14 @@ export default function PaginaRegistro() { // Renomeado de volta
     const [confirmarSenha, setConfirmarSenha] = useState('');
     const [termos, setTermos] = useState(false);
 
-    // Estado para mensagens de erro e loading
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Função para lidar com o envio do formulário de registro
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setIsLoading(true);
         setError(null);
 
-        // Validação simples de senha
         if (senhaReg !== confirmarSenha) {
             setError('As senhas não coincidem!');
             setIsLoading(false);
@@ -51,21 +46,20 @@ export default function PaginaRegistro() { // Renomeado de volta
             const registroData = {
                 nome,
                 email,
-                nomeUsuario: nomeUsuarioReg, // Garante que o nome do campo corresponde ao DTO do backend
-                telefone: telefone || null, // Envia null se vazio
+                nomeUsuario: nomeUsuarioReg,
+                telefone: telefone || null,
                 senha: senhaReg,
             };
-            console.log("Enviando dados de registro:", registroData); // Debug
-            await api.post('/usuarios/registrar', registroData); // Chama API de registro
+            console.log("Enviando dados de registro:", registroData);
+            await api.post('/usuarios/registrar', registroData);
 
-            alert('Registro realizado com sucesso! Faça o login para continuar.'); // Feedback temporário
-            // Limpa o formulário (opcional)
+            alert('Registro realizado com sucesso! Faça o login para continuar.');
             setNome(''); setEmail(''); setNomeUsuarioReg(''); setTelefone('');
             setSenhaReg(''); setConfirmarSenha(''); setTermos(false);
-            // Redireciona para a página de login após sucesso
+
             router.push('/login');
 
-        } catch (error) { // Tratamento de erro tipado
+        } catch (error) {
             console.error("Erro no registro:", error);
             let errorMessage = 'Erro desconhecido ao registrar. Tente novamente mais tarde.';
             if (axios.isAxiosError(error)) {
@@ -90,32 +84,28 @@ export default function PaginaRegistro() { // Renomeado de volta
     };
 
     return (
-        // Layout de duas colunas
+
         <div className="flex min-h-screen bg-gray-900 text-white">
-            {/* Coluna Esquerda */}
             <div className="hidden lg:flex w-1/2 items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-black p-10">
-                {/* adicionar logo e mudar o design mais pra frente */}
+
                 <div className="text-center">
                     <h1 className="text-4xl font-bold mb-4">Conecta Pro</h1>
                     <p className="text-xl text-gray-400">Conectando profissionais e clientes.</p>
                 </div>
             </div>
 
-            {/* Coluna Direita (Formulário de Registro) */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-12">
                 <div className="w-full max-w-md">
                     <h2 className="text-3xl font-bold mb-6 text-center">Register</h2>
 
                     <form onSubmit={handleSubmit}>
 
-                        {/* Mensagem de Erro */}
                         {error && (
                             <div className="mb-4 p-3 bg-red-900 border border-red-700 text-red-200 rounded-md text-center">
                                 {error}
                             </div>
                         )}
 
-                        {/* Campos específicos de Registro usando componentes reutilizáveis */}
                         <div className="mb-4">
                             <Input id="nome" label="Nome" type="text" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome completo" required />
                         </div>
@@ -135,18 +125,15 @@ export default function PaginaRegistro() { // Renomeado de volta
                             <Input id="confirmarSenha" label="Confirmar senha" type="password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} placeholder="Digite a senha novamente" required />
                         </div>
 
-                        {/* Checkbox Termos */}
                         <div className="mb-6 flex items-center">
                             <input type="checkbox" id="termos" checked={termos} onChange={(e) => setTermos(e.target.checked)} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-800" required />
                             <label htmlFor="termos" className="ml-2 block text-sm text-gray-400">Li e concordo com os <a href="#" className="text-blue-400 hover:text-blue-300">termos de serviço</a></label>
                         </div>
 
-                        {/* Botão Confirmar */}
                         <Button type="submit" isLoading={isLoading}>
                             Confirmar
                         </Button>
 
-                        {/* Divisor e Login Social/Alternar Modo */}
                         <div className="mt-6 text-center">
                             <div className="relative my-4">
                                 <div className="absolute inset-0 flex items-center">
@@ -162,10 +149,9 @@ export default function PaginaRegistro() { // Renomeado de volta
                                 <button type="button" className="p-2 bg-gray-700 rounded-full hover:bg-gray-600">A</button>
                             </div>
 
-                            {/* Link para Login */}
                             <p className="mt-6 text-sm text-gray-400">
                                 Já tem uma conta?
-                                <Link href="/login" // Link para a página de login
+                                <Link href="/login"
                                       className="ml-1 text-blue-400 hover:text-blue-300 font-medium">
                                     Faça login
                                 </Link>

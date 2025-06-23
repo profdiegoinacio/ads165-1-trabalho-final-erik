@@ -1,45 +1,64 @@
-// src/components/layout/SidebarEsquerda.tsx
-import Link from 'next/link';
-import React from 'react';
+'use client';
 
-export default function SidebarEsquerda() {
-    // Itens do menu (podem vir de um array de configuração no futuro)
-    const menuItems = [
-        { href: '/dashboard', label: 'Home' },
-        { href: '/profissionais', label: 'Profissionais' },
-        { href: '/comunidade', label: 'Comunidade' },
-        { href: '/historico', label: 'Histórico' },
-        { href: '/categorias', label: 'Categorias' },
-    ];
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
+import { Home, User, Users, Briefcase, History, Shapes, LogOut, MessageSquare } from 'lucide-react';
+
+const NavLink = ({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) => {
+    const pathname = usePathname();
+    const isActive = pathname === href;
 
     return (
-        <aside className="w-64 p-4 sticky top-0 h-screen hidden lg:flex flex-col">
-            <div className="mb-8">
-                {/* Logo */}
-                <Link href="/dashboard" className="text-2xl font-bold text-white">ONECTA</Link>
+        <Link href={href}>
+            <span className={`flex items-center space-x-4 px-3 py-2 rounded-full transition-colors duration-200 hover:bg-gray-800 ${isActive ? 'font-bold text-white' : 'text-gray-300'}`}>
+                {icon}
+                <span className="text-lg">{children}</span>
+            </span>
+        </Link>
+    );
+};
+
+
+export default function SidebarEsquerda() {
+    const { data: session } = useSession();
+
+    return (
+        <div className="h-full flex flex-col justify-between p-2">
+            <div>
+                <div className="p-4">
+                    <h1 className="text-3xl font-bold text-blue-400 p-3 tracking-wider">
+                        Conecta
+                    </h1>
+                </div>
+
+                <nav className="space-y-2">
+                    <NavLink href="/dashboard" icon={<Home size={28} />}>Página Inicial</NavLink>
+                    <NavLink href="/dashboard/profissionais" icon={<Briefcase size={28} />}>Profissionais</NavLink>
+                    <NavLink href="/dashboard/comunidade" icon={<Users size={28} />}>Comunidade</NavLink>
+                    <NavLink href="/dashboard/mensagens" icon={<MessageSquare size={28} />}>Mensagens</NavLink>
+                    <NavLink href="/dashboard/historico" icon={<History size={28} />}>Histórico</NavLink>
+                    <NavLink href="/dashboard/categorias" icon={<Shapes size={28} />}>Categorias</NavLink>
+                    {session?.user?.username && (
+                        <NavLink href={`/dashboard/perfil/${session.user.username}`} icon={<User size={28} />}>
+                            Perfil
+                        </NavLink>
+                    )}
+                </nav>
             </div>
 
-            <nav className="flex flex-col space-y-2">
-                {menuItems.map((item) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className="text-lg text-gray-300 hover:bg-gray-800 hover:text-white rounded-full px-4 py-2 transition-colors duration-200"
+
+            {session && (
+                <div className="p-4">
+                    <button
+                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        className="w-full flex items-center justify-center space-x-3 px-3 py-3 rounded-full font-bold text-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
                     >
-                        {item.label}
-                    </Link>
-                ))}
-            </nav>
-
-            {/* Botão de Perfil na parte inferior */}
-            <div className="mt-auto">
-                <Link href="/dashboard/perfil/meu-perfil" // Link para o perfil do usuário logado (exemplo)
-                      className="flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-full"
-                >
-                    <div className="w-10 h-10 bg-gray-600 rounded-full"></div> {/* Placeholder do Avatar */}
-                    <span className="font-semibold text-white">Perfil</span>
-                </Link>
-            </div>
-        </aside>
+                        <LogOut size={24} />
+                        <span>Sair</span>
+                    </button>
+                </div>
+            )}
+        </div>
     );
 }

@@ -1,78 +1,85 @@
 package com.example.backend.config.filter;
 
-import com.example.backend.repository.UsuarioRepository;
 import com.example.backend.service.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 
-@Component // Marca como um componente Spring para ser gerenciado
-public class JwtAuthenticationFilter extends OncePerRequestFilter { // Garante execução única por requisição
-
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private TokenService tokenService;
 
     @Autowired
-    private UsuarioRepository usuarioRepository; // Para buscar o usuário pelo nome
+    private UserDetailsService userDetailsService;
+
+    private static final List<String> PUBLIC_POST_PATHS = List.of(
+            "/api/v1/auth/login",
+            "/api/v1/usuarios/registrar"
+    );
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-        String tokenJWT = recuperarToken(request);
-
-        if (tokenJWT != null) {
-            log.debug("Token JWT encontrado na requisição: {}", request.getRequestURI());
-            String subject = tokenService.getSubject(tokenJWT); // Valida o token e pega o subject (username)
-
-            if (subject != null) {
-                log.debug("Subject extraído do token: {}", subject);
-                // Busca o usuário no banco de dados
-                UserDetails usuario = usuarioRepository.findByNomeUsuario(subject).orElse(null);
-
-                if (usuario != null) {
-                    log.debug("Usuário encontrado no banco: {}", subject);
-                    // Cria o objeto Authentication para o Spring Security
-                    // Passamos null como credenciais pois a autenticação já foi feita pelo token
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
-
-                    // Define o usuário como autenticado no contexto de segurança do Spring
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    log.debug("Usuário autenticado via JWT e definido no SecurityContext");
-                } else {
-                    log.warn("Usuário referente ao subject '{}' do token não encontrado no banco.", subject);
-                }
-            } else {
-                log.debug("Token JWT inválido ou expirado para requisição: {}", request.getRequestURI());
-            }
-        } else {
-            log.trace("Nenhum token JWT encontrado no cabeçalho Authorization para: {}", request.getRequestURI());
+        if (isPublicPath(request)) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        // Continua a cadeia de filtros (permite que a requisição prossiga)
+        var tokenJWT = recuperarToken(request);
+
+        if (tokenJWT != null) {
+            try {
+                var subject = tokenService.getSubject(tokenJWT);
+                UserDetails user = userDetailsService.loadUserByUsername(subject);
+
+                var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception e) {
+                SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN); // Retorna 403 se o token é inválido
+                return;
+            }
+        }
+
         filterChain.doFilter(request, response);
     }
 
     private String recuperarToken(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader("Authorization");
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            return authorizationHeader.substring(7); // Remove o prefixo "Bearer "
+        var authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader != null) {
+            return authorizationHeader.replace("Bearer ", "");
         }
-        return null; // Retorna null se não encontrar o token no formato esperado
+        return null;
+    }
+
+    // Método para verificar se a rota atual é pública
+    private boolean isPublicPath(HttpServletRequest request) {
+        String path = request.getServletPath();
+        String method = request.getMethod();
+
+        if (HttpMethod.GET.matches(method) && path.startsWith("/api/v1/")) {
+            return true;
+        }
+
+        if (HttpMethod.POST.matches(method) && PUBLIC_POST_PATHS.contains(path)) {
+            return true;
+        }
+
+        return false;
     }
 }

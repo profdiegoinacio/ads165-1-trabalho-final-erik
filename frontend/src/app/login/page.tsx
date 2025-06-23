@@ -4,7 +4,7 @@
 import React, { useState, FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { signIn } from 'next-auth/react'; // <-- Importa a função signIn!
+import { signIn } from 'next-auth/react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
@@ -13,7 +13,7 @@ export default function PaginaLogin() {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-    const [login, setLogin] = useState(''); // Campo para nome de usuário
+    const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -24,22 +24,18 @@ export default function PaginaLogin() {
         setError(null);
 
         try {
-            // --- ESTA É A LÓGICA CORRETA ---
-            // Usamos a função signIn do NextAuth para chamar nosso provider 'credentials'
             const result = await signIn('credentials', {
-                redirect: false, // Não redireciona automaticamente para podermos tratar o resultado
-                login: login, // Passa o 'login' que o nosso 'authorize' espera
+                redirect: false,
+                login: login,
                 password: password,
             });
 
             setIsLoading(false);
 
             if (result?.error) {
-                // Se NextAuth retornar um erro (ex: credenciais inválidas)
                 console.error("Erro de autenticação retornado pelo NextAuth:", result.error);
                 setError("Nome de usuário ou senha inválidos.");
             } else if (result?.ok) {
-                // Se o login for bem-sucedido, redirecionamos para o dashboard
                 console.log("Login via NextAuth bem-sucedido, redirecionando...");
                 router.push(callbackUrl);
             }

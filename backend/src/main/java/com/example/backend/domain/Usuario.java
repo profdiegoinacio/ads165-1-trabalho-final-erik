@@ -1,22 +1,24 @@
 package com.example.backend.domain;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.Collection;
-import java.util.HashSet; // Import HashSet
-import java.util.Set;     // Import Set
-import java.util.stream.Collectors; // Import Collectors
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "usuarios") // Mantido como "usuarios"
-@Data
+@Table(name = "usuarios")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Usuario implements UserDetails {
@@ -26,62 +28,52 @@ public class Usuario implements UserDetails {
     private Long id;
 
     @Column(nullable = false)
-    private String nome; // Mantido
+    private String nome;
 
     @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false, unique = true)
-    private String nomeUsuario; // Usaremos como username para UserDetails
+    private String nomeUsuario;
 
     private String telefone;
 
     @Column(nullable = false)
-    private String senha; // Senha já criptografada
+    private String senha;
 
-    private boolean enabled = true; // Campo do exemplo do texto, útil
+    private boolean enabled = true;
 
-    // Novo campo para papéis
-    @ElementCollection(fetch = FetchType.EAGER) // Carrega os papéis junto com o usuário
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Perfil perfil;
+
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_roles", joinColumns = @JoinColumn(name = "usuario_id"))
     @Column(name = "role")
-    private Set<String> roles = new HashSet<>(); // Ex: "ROLE_USER", "ROLE_ADMIN"
-
-    // Construtor customizado para registro (exemplo)
-    public Usuario(String nome, String email, String nomeUsuario, String telefone, String senha, Set<String> roles) {
-        this.nome = nome;
-        this.email = email;
-        this.nomeUsuario = nomeUsuario;
-        this.telefone = telefone;
-        this.senha = senha; // Senha deve ser passada já criptografada para este construtor
-        this.roles = roles;
-        this.enabled = true;
-    }
+    private Set<String> roles = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "usuarios_seguidores", // Nome da tabela de junção
-            joinColumns = @JoinColumn(name = "seguidor_id"), // Chave do usuário que segue
-            inverseJoinColumns = @JoinColumn(name = "seguido_id") // Chave do usuário que é seguido
+            name = "usuarios_seguidores",
+            joinColumns = @JoinColumn(name = "seguidor_id"),
+            inverseJoinColumns = @JoinColumn(name = "seguido_id")
     )
-    @JsonIgnore // Evita que a lista de quem você segue seja serializada, quebrando o loop
     private Set<Usuario> seguindo = new HashSet<>();
 
     @ManyToMany(mappedBy = "seguindo", fetch = FetchType.LAZY)
-    @JsonIgnore // Evita que a lista de seguidores seja serializada
     private Set<Usuario> seguidores = new HashSet<>();
 
     @Setter
     @Getter
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JsonManagedReference // Lado "principal" da relação, será serializado normalmente
-    private Perfil perfil;
-
-    // --- Implementação dos métodos UserDetails ATUALIZADA ---
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "usuario_areas_atuacao",
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "area_id")
+    )
+    private Set<AreaDeAtuacao> areasDeAtuacao = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Mapeia os papéis armazenados para GrantedAuthority
         return this.roles.stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
@@ -94,7 +86,6 @@ public class Usuario implements UserDetails {
 
     @Override
     public String getUsername() {
-        // Continuaremos usando nomeUsuario como o "username" para Spring Security
         return this.nomeUsuario;
     }
 
@@ -118,4 +109,18 @@ public class Usuario implements UserDetails {
         return this.enabled;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Usuario usuario = (Usuario) o;
+        return Objects.equals(id, usuario.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
 }
+

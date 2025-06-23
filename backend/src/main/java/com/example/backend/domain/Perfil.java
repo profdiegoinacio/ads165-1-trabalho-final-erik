@@ -1,19 +1,19 @@
 package com.example.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import com.fasterxml.jackson.annotation.JsonBackReference; // Importante para evitar loop infinito
 
 @Entity
 @Table(name = "perfis")
 public class Perfil {
 
     @Id
-    private Long id; // Usaremos o mesmo ID do usuário
+    private Long id;
 
     private String bio;
 
     @Column(name = "formacao")
-    private String formacao; // Ex: "Designer Gráfico formado na UPF"
+    private String formacao;
 
     @Column(name = "foto_perfil_url")
     private String fotoPerfilUrl;
@@ -21,14 +21,15 @@ public class Perfil {
     @Column(name = "foto_capa_url")
     private String fotoCapaUrl;
 
-    // --- Relacionamento Um-para-Um ---
+    @Column(name = "is_profissional", nullable = false, columnDefinition = "boolean default false")
+    private boolean isProfissional = false;
+
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId // Mapeia o ID desta entidade para ser o mesmo da entidade Usuario
-    @JoinColumn(name = "id") // A coluna de junção é o próprio ID
-    @JsonBackReference // Evita que o Perfil serialize o Usuário de volta, causando um loop
+    @MapsId
+    @JoinColumn(name = "id")
+    @JsonBackReference
     private Usuario usuario;
 
-    // Getters e Setters (pode usar Lombok)
     public Long getId() {
         return id;
     }
@@ -67,6 +68,14 @@ public class Perfil {
 
     public void setFotoCapaUrl(String fotoCapaUrl) {
         this.fotoCapaUrl = fotoCapaUrl;
+    }
+
+    public boolean isProfissional() {
+        return isProfissional;
+    }
+
+    public void setProfissional(boolean profissional) {
+        isProfissional = profissional;
     }
 
     public Usuario getUsuario() {

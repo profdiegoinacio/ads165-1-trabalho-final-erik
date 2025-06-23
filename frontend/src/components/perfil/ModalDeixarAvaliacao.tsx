@@ -1,21 +1,19 @@
-// src/components/perfil/ModalDeixarAvaliacao.tsx
 "use client";
 
 import React, { useState, FormEvent } from 'react';
 import { useSession } from 'next-auth/react';
 import api from '@/lib/api';
 import Button from '../ui/Button';
-import StarRatingInput from '../ui/StarRatingInput'; // Um novo componente de input de estrelas
+import StarRatingInput from '../ui/StarRatingInput';
 
 interface ModalProps {
     isOpen: boolean;
     onClose: () => void;
-    profileOwnerUsername: string; // O username de quem está sendo avaliado
-    onReviewSubmitted: () => void; // Callback para atualizar a página de perfil
+    profileOwnerUsername: string;
+    onReviewSubmitted: () => void;
 }
 
 export default function ModalDeixarAvaliacao({ isOpen, onClose, profileOwnerUsername, onReviewSubmitted }: ModalProps) {
-    // Estados do formulário
     const [nota, setNota] = useState(0);
     const [comentario, setComentario] = useState('');
 
@@ -45,13 +43,12 @@ export default function ModalDeixarAvaliacao({ isOpen, onClose, profileOwnerUser
         try {
             const reviewData = { nota, comentario };
 
-            // Chama o endpoint POST que criamos no backend
             await api.post(`/usuarios/${profileOwnerUsername}/avaliacoes`, reviewData, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            onReviewSubmitted(); // Avisa a página pai para recarregar os dados
-            onClose(); // Fecha o modal
+            onReviewSubmitted();
+            onClose();
 
         } catch (err: any) {
             console.error("Erro ao enviar avaliação:", err);
@@ -71,7 +68,6 @@ export default function ModalDeixarAvaliacao({ isOpen, onClose, profileOwnerUser
 
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">Sua nota</label>
-                        {/* Usaremos um componente de input de estrelas */}
                         <StarRatingInput rating={nota} setRating={setNota} />
                     </div>
 

@@ -20,26 +20,17 @@ public class Avaliacao {
     @Column(nullable = false)
     private Integer nota;
 
-    @Column(length = 1000) // Limita o tamanho do comentário
+    @Column(length = 1000)
     private String comentario;
 
     @Column(name = "data_avaliacao", nullable = false)
     private LocalDateTime dataAvaliacao;
 
-    // --- RELACIONAMENTOS ---
-
-    /**
-     * O usuário que FEZ a avaliação.
-     * Muitas avaliações podem ser feitas por um mesmo usuário.
-     */
+    //RELACIONAMENTOS
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "avaliador_id", nullable = false)
     private Usuario avaliador;
 
-    /**
-     * O profissional que RECEBEU a avaliação.
-     * Muitas avaliações podem ser para um mesmo profissional.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "avaliado_id", nullable = false)
     private Usuario avaliado;

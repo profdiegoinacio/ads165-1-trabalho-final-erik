@@ -1,5 +1,10 @@
-// src/types/perfil.ts
+export interface AreaDeAtuacao {
+    id: number;
+    nome: string;
+}
+
 export interface PerfilUsuario {
+    areasDeAtuacao: any;
     id: number;
     nome: string;
     nomeUsuario: string;
@@ -11,4 +16,8 @@ export interface PerfilUsuario {
     fotoCapaUrl?: string;
     notaMedia?: number;
     totalAvaliacoes?: number;
+    seguindoPeloUsuarioLogado: boolean;
+    totalSeguidores: number;
+    totalSeguindo: number;
+    isProfissional: boolean;
 }

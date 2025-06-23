@@ -5,11 +5,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/v1/usuarios/{username}/seguir")
+@CrossOrigin(origins = "*")
 public class SeguirController {
 
+    private static final Logger log = LoggerFactory.getLogger(SeguirController.class);
     private final UsuarioService usuarioService;
 
     @Autowired
@@ -17,24 +21,27 @@ public class SeguirController {
         this.usuarioService = usuarioService;
     }
 
-    /**
-     * Endpoint para seguir um usuário. Requer autenticação.
-     * @param username O usuário a ser seguido (da URL).
-     * @param authentication O usuário logado (o seguidor).
-     * @return Resposta de sucesso sem conteúdo.
-     */
     @PostMapping
-    public ResponseEntity<Void> seguir(@PathVariable String username, Authentication authentication) {
+    public ResponseEntity<Void> seguir(@PathVariable("username") String username, Authentication authentication) {
+        if (authentication == null) {
+            log.error("Endpoint /seguir atingido, mas o objeto Authentication está NULO.");
+            return ResponseEntity.status(401).build();
+        }
+
+        log.info("Endpoint /seguir atingido por: '{}'. Usuário alvo: '{}'.", authentication.getName(), username);
         String usernameSeguidor = authentication.getName();
         usuarioService.seguirUsuario(usernameSeguidor, username);
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * Endpoint para deixar de seguir um usuário. Requer autenticação.
-     */
     @DeleteMapping
-    public ResponseEntity<Void> deixarDeSeguir(@PathVariable String username, Authentication authentication) {
+    public ResponseEntity<Void> deixarDeSeguir(@PathVariable("username") String username, Authentication authentication) {
+        if (authentication == null) {
+            log.error("Endpoint /deixar-de-seguir atingido, mas o objeto Authentication está NULO.");
+            return ResponseEntity.status(401).build();
+        }
+
+        log.info("Endpoint /deixar-de-seguir atingido por: '{}'. Usuário alvo: '{}'.", authentication.getName(), username);
         String usernameSeguidor = authentication.getName();
         usuarioService.deixarDeSeguirUsuario(usernameSeguidor, username);
         return ResponseEntity.ok().build();

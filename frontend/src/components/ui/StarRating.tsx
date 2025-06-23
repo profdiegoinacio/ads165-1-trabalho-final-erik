@@ -1,4 +1,3 @@
-// src/components/ui/StarRating.tsx
 import React from 'react';
 
 interface StarRatingProps {
@@ -9,7 +8,7 @@ interface StarRatingProps {
 
 const StarRating: React.FC<StarRatingProps> = ({ rating, totalStars = 5, className = 'w-5 h-5' }) => {
     const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 !== 0; // Não vamos usar meia estrela por enquanto, mas a lógica está aqui
+    const halfStar = rating % 1 !== 0;
     const emptyStars = totalStars - fullStars - (halfStar ? 1 : 0);
 
     return (

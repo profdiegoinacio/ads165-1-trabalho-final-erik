@@ -9,14 +9,11 @@ public class AvaliacaoResponseDTO {
     private Integer nota;
     private String comentario;
     private LocalDateTime dataAvaliacao;
-    private AutorDTO avaliador; // Quem fez a avaliação
-
-    // DTO aninhado para informações do autor da avaliação
+    private AutorDTO avaliador;
     @Data
     public static class AutorDTO {
         private Long id;
         private String nome;
         private String nomeUsuario;
-        // private String fotoPerfilUrl; // Poderíamos adicionar no futuro
     }
 }

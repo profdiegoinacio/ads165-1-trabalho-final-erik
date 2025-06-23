@@ -3,41 +3,36 @@ package com.example.backend.domain;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity // Marca esta classe como uma entidade JPA
-@Table(name = "postagens") // Define o nome da tabela no banco
+@Entity
+@Table(name = "postagens")
 public class Postagem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 2000) // Conteúdo do post, não pode ser nulo
+    @Column(nullable = false, length = 2000)
     private String conteudo;
 
-    // Opcional: para o caso de um post com imagem ou vídeo
     @Column(name = "url_midia")
     private String urlMidia;
 
     @Column(name = "data_criacao", nullable = false)
     private LocalDateTime dataCriacao;
 
-    // --- Relacionamento Muitos-para-Um ---
-    // Muitas postagens podem ser de um único usuário.
-    @ManyToOne(fetch = FetchType.LAZY) // LAZY: só carrega o usuário quando for acessado
-    @JoinColumn(name = "usuario_id", nullable = false) // Define a chave estrangeira na tabela 'postagens'
-    private Usuario autor; // A entidade Usuario que criamos anteriormente
 
-    // Construtor padrão exigido pelo JPA
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario autor;
+
     public Postagem() {
     }
 
-    // Método que é executado antes de a entidade ser persistida pela primeira vez
     @PrePersist
     protected void onCreate() {
         this.dataCriacao = LocalDateTime.now();
     }
 
-    // Getters e Setters (pode usar Lombok se preferir)
     public Long getId() {
         return id;
     }

@@ -2,8 +2,8 @@ import React, { InputHTMLAttributes } from 'react';
 
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-    label?: string; // Label opcional
-    id: string; // ID é obrigatório para o htmlFor do label
+    label?: string;
+    id: string;
 }
 
 const Input: React.FC<InputProps> = ({ label, id, className, ...props }) => {
@@ -17,7 +17,7 @@ const Input: React.FC<InputProps> = ({ label, id, className, ...props }) => {
             <input
                 id={id}
                 className={`w-full p-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-500 ${className}`} // Combina classes padrão com as passadas via props
-                {...props} // Passa todas as outras props (type, name, value, onChange, placeholder, required, etc.)
+                {...props}
             />
         </div>
     );

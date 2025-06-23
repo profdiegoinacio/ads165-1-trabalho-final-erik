@@ -25,44 +25,34 @@ public class AvaliacaoService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    /**
-     * Cria uma nova avaliação, aplicando regras de negócio.
-     */
     @Transactional
     public AvaliacaoResponseDTO criarAvaliacao(AvaliacaoRequestDTO dto, String usernameAvaliador, String usernameAvaliado) {
-        // Regra 1: Usuário não pode avaliar a si mesmo.
+
         if (usernameAvaliador.equalsIgnoreCase(usernameAvaliado)) {
             throw new IllegalArgumentException("Você não pode avaliar a si mesmo.");
         }
 
-        // Busca os usuários envolvidos no banco de dados.
         Usuario avaliador = usuarioRepository.findByNomeUsuario(usernameAvaliador)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário avaliador não encontrado: " + usernameAvaliador));
 
         Usuario avaliado = usuarioRepository.findByNomeUsuario(usernameAvaliado)
                 .orElseThrow(() -> new EntityNotFoundException("Usuário a ser avaliado não encontrado: " + usernameAvaliado));
 
-        // Regra 2: Usuário só pode avaliar outro usuário uma única vez.
         if (avaliacaoRepository.existsByAvaliadorAndAvaliado(avaliador, avaliado)) {
             throw new IllegalArgumentException("Você já avaliou este profissional.");
         }
 
-        // Se todas as regras passarem, cria e salva a nova avaliação.
         Avaliacao novaAvaliacao = new Avaliacao();
         novaAvaliacao.setNota(dto.getNota());
         novaAvaliacao.setComentario(dto.getComentario());
         novaAvaliacao.setAvaliador(avaliador);
         novaAvaliacao.setAvaliado(avaliado);
-        // A data é definida pelo @PrePersist na entidade.
 
         Avaliacao avaliacaoSalva = avaliacaoRepository.save(novaAvaliacao);
 
         return toResponseDTO(avaliacaoSalva);
     }
 
-    /**
-     * Lista todas as avaliações recebidas por um usuário.
-     */
     @Transactional(readOnly = true)
     public Page<AvaliacaoResponseDTO> listarAvaliacoesPorUsuario(String username, Pageable pageable) {
         Usuario avaliado = usuarioRepository.findByNomeUsuario(username)
@@ -73,7 +63,6 @@ public class AvaliacaoService {
         return avaliacoes.map(this::toResponseDTO);
     }
 
-    // Método privado para converter a entidade Avaliacao para o DTO de resposta.
     private AvaliacaoResponseDTO toResponseDTO(Avaliacao avaliacao) {
         AvaliacaoResponseDTO dto = new AvaliacaoResponseDTO();
         dto.setId(avaliacao.getId());
@@ -90,21 +79,11 @@ public class AvaliacaoService {
         return dto;
     }
 
-    /**
-     * Busca a nota média de um usuário.
-     * @param usuario O usuário avaliado.
-     * @return A nota média como um Double, ou 0.0 se não houver avaliações.
-     */
     public Double getNotaMediaPorUsuario(Usuario usuario) {
         Double media = avaliacaoRepository.findAverageNotaByAvaliado(usuario);
         return media == null ? 0.0 : media;
     }
 
-    /**
-     * Busca o número total de avaliações de um usuário.
-     * @param usuario O usuário avaliado.
-     * @return O total de avaliações como um Long.
-     */
     public long getTotalAvaliacoesPorUsuario(Usuario usuario) {
         return avaliacaoRepository.countByAvaliado(usuario);
     }

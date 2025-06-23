@@ -1,4 +1,3 @@
-// src/components/dashboard/FormularioCriarPostagem.tsx
 "use client";
 
 import React, { useState, FormEvent } from 'react';
@@ -6,9 +5,8 @@ import { useSession } from 'next-auth/react';
 import api from '@/lib/api';
 import Button from '../ui/Button';
 
-// Definimos a interface para as props que o componente espera receber
 interface FormularioProps {
-    onPostCreated: () => void; // Espera uma função de callback
+    onPostCreated: () => void;
 }
 
 export default function FormularioCriarPostagem({ onPostCreated }: FormularioProps) {
@@ -43,8 +41,8 @@ export default function FormularioCriarPostagem({ onPostCreated }: FormularioPro
                 }
             );
 
-            setConteudo(''); // Limpa o formulário
-            onPostCreated(); // <<< CHAMA A FUNÇÃO DO PAI PARA ATUALIZAR A LISTA
+            setConteudo('');
+            onPostCreated();
 
         } catch (err) {
             console.error("Erro ao criar postagem:", err);
@@ -55,14 +53,13 @@ export default function FormularioCriarPostagem({ onPostCreated }: FormularioPro
     };
 
     if (status !== 'authenticated') {
-        return null; // Não mostra o formulário se o usuário não estiver logado
+        return null;
     }
 
     return (
         <div className="p-4 border-b border-gray-700">
             <form onSubmit={handleSubmit} className="flex space-x-4">
                 <div className="w-12 h-12 bg-gray-600 rounded-full flex-shrink-0">
-                    {/* Placeholder do avatar do usuário logado */}
                 </div>
                 <div className="flex-1">
           <textarea

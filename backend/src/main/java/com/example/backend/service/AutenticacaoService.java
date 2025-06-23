@@ -10,13 +10,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class AutenticacaoService implements UserDetailsService {
 
-    @Autowired // Ou injeção via construtor
+    @Autowired
     private UsuarioRepository repository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Busca o usuário pelo nomeUsuario no repositório
-        // O método findByNomeUsuario precisa retornar UserDetails (nossa classe Usuario)
+
         return repository.findByNomeUsuario(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
     }

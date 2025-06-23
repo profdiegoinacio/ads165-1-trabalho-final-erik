@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor // Construtor para facilitar a criação
+@AllArgsConstructor
 public class TokenDTO {
     private String token;
     private String tipo;
